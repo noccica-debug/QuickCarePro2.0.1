@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <title>QuickCare Pro</title>
+    <style>
+        :root {
+            --bg: #f8fafc; 
+            --card: #ffffff; 
+            --primary: #3b82f6; 
+            --primary-grad: #2563eb;
+            --primary-text: #3b82f6;
+            --danger: #ef4444; 
+            --danger-text: #ef4444;
+            --warning: #f59e0b;
+            --warning-text: #d97706;
+            --inc-text: #10b981; 
+            --inc-text-color: #10b981;
+            --text: #0f172a; 
+            --text-muted: #64748b; 
+            --border: #e2e8f0; 
+            --input-bg: #f1f5f9;
+            --timer-bg: #f8fafc; 
+            --shadow: 0 2px 10px rgba(0,0,0,0.02);
+            --badge-comp-bg: #e2e8f0;
+            --badge-comp-text: #64748b;
+            --btn-text: #ffffff;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body:not(.light-theme-forced) {
+                --bg: #121212; 
+                --card: #1e1e1e; 
+                --primary: #2563eb; 
+                --primary-grad: #1d4ed8;
+                --primary-text: #60a5fa;  
+                --danger: #ef4444; 
+                --danger-text: #f87171;   
+                --warning: #f59e0b; 
+                --warning-text: #fbbf24;  
+                --inc-text: #10b981; 
+                --inc-text-color: #34d399;
+                --text: #cbd5e1; 
+                --text-muted: #8a99ad; 
+                --border: #2d3748; 
+                --input-bg: #2d3748;
+                --timer-bg: #1a202c; 
+                --shadow: 0 4px 20px rgba(0,0,0,0.4);
+                --badge-comp-bg: #334155;
+                --badge-comp-text: #94a3b8;
+                --btn-text: #e2e8f0;
+            }
+        }
+
+        body.dark-mode-forced {
+            --bg: #121212; 
+            --card: #1e1e1e; 
+            --primary: #2563eb; 
+            --primary-grad: #1d4ed8;
+            --primary-text: #60a5fa;  
+            --danger: #ef4444; 
+            --danger-text: #f87171;   
+            --warning: #f59e0b; 
+            --warning-text: #fbbf24;  
+            --inc-text: #10b981; 
+            --inc-text-color: #34d399;
+            --text: #cbd5e1; 
+            --text-muted: #8a99ad; 
+            --border: #2d3748; 
+            --input-bg: #2d3748;
+            --timer-bg: #1a202c; 
+            --shadow: 0 4px 20px rgba(0,0,0,0.4);
+            --badge-comp-bg: #334155;
+            --badge-comp-text: #94a3b8;
+            --btn-text: #e2e8f0;
+        }
+
+        body { 
+            font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; 
+            margin: 0; padding: 12px; display: flex; flex-direction: column; min-height: 100vh; 
+            background: var(--bg); color: var(--text); transition: background-color 0.2s, color 0.2s; 
+            -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        .panel { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); border: 1px solid var(--border); position: relative; }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+
+        .clickable-title-btn { display: flex; align-items: center; justify-content: space-between; width: 100%; background: transparent; color: var(--text); padding: 4px 0; margin: 0; font-size: 16px; font-weight: 800; border: none; text-align: left; cursor: pointer; }
+        .title-arrow { font-size: 12px; color: var(--text-muted); transition: transform 0.2s; }
+        .title-arrow.open { transform: rotate(180deg); }
+
+        .timer-box { background: var(--timer-bg); padding: 12px 14px; border-radius: 12px; margin-bottom: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
+        .timer-left-col { display: flex; flex-direction: column; gap: 4px; width: 100%; }
+        .timer-row { display: flex; justify-content: space-between; align-items: center; white-space: nowrap; }
+        .timer-time-main { font-size: 18px; font-weight: 800; color: var(--primary-text); font-family: monospace; letter-spacing: 0.5px; }
+        .timer-qtr-badge { font-size: 11px; font-weight: 800; color: var(--danger-text); background: rgba(239, 68, 68, 0.12); padding: 3px 8px; border-radius: 6px; letter-spacing: 0.5px; }
+        .timer-sub-text { font-size: 12px; color: var(--text-muted); font-weight: 600; display:flex; gap:12px; }
+
+        .mode-swiper-container { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; padding-bottom: 4px; scrollbar-width: none; }
+        .mode-swiper-container::-webkit-scrollbar { display: none; }
+        .swiper-tab { flex: 1; text-align: center; padding: 12px 8px; font-size: 14px; font-weight: 800; border-radius: 10px; background: var(--card); border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; transition: 0.2s; }
+        .swiper-tab.active { background: var(--primary); color: var(--btn-text); border-color: var(--primary); }
+
+        .input-row-2-col { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+        .input-row-bot { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+        
+        .navi-grid { display: grid; grid-template-columns: 1fr auto; gap: 6px; margin-bottom: 6px; align-items: stretch; }
+        .navi-grid-inputs { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+        .navi-grid input { font-size: 14px; height: 44px; }
+        .btn-tmap-fetch-action { width: 70px; height: 94px; font-size: 14px !important; margin: 0; padding: 0; }
+
+        .calc-banner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+        .calc-banner-card { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-grad) 100%); color: var(--btn-text); padding: 14px; border-radius: 12px; box-shadow: var(--shadow); display: flex; flex-direction: column; justify-content: center; }
+        .calc-banner-card sub { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+        .calc-val-main { font-size: 22px; font-weight: 900; line-height: 1.2; }
+        .calc-val-sub { font-size: 18px; font-weight: 800; color: var(--text); }
+        .calc-lbl { font-size: 11px; font-weight: 700; opacity: 0.8; margin-bottom: 2px; letter-spacing: 0.3px; }
+
+        .summary-box { background: var(--timer-bg); border: 1px solid var(--border); padding: 12px; border-radius: 12px; font-size: 13px; line-height: 1.5; margin-bottom: 8px; }
+        .summary-title { font-weight: 800; font-size: 12px; margin-bottom: 4px; color: var(--primary-text); letter-spacing: 0.5px; }
+
+        button { -webkit-appearance: none; appearance: none; width: 100%; padding: 12px; font-size: 14px; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; margin: 0; transition: background 0.1s, transform 0.1s; background-color: var(--border); color: var(--text); white-space: nowrap; }
+        button:active { transform: scale(0.98); opacity: 0.9; }
+        
+        .btn-primary { background-color: var(--primary); color: var(--btn-text); }
+        .btn-success { background-color: var(--inc-text); color: var(--btn-text); }
+        .btn-danger { background-color: var(--danger); color: var(--btn-text); }
+        .btn-warning { background-color: var(--warning); color: var(--btn-text); }
+        .btn-small { padding: 6px 12px; font-size: 13px; width: auto; height: auto; border-radius: 8px; }
+        .btn-icon { padding: 6px 10px; background: var(--timer-bg); color: var(--text); width: auto; font-size: 13px; border: 1px solid var(--border); }
+
+        input[type="text"], input[type="password"], input[type="number"], select, textarea { 
+            -webkit-appearance: none; appearance: none; width: 100%; padding: 0 12px; margin: 0; 
+            border-radius: 10px; font-size: 14px; font-weight: 500; height: 44px; background: var(--input-bg); 
+            color: var(--text); border: 1px solid var(--border); outline: none; transition: border-color 0.2s; 
+            font-family: inherit;
+        }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+
+        .filter-tab-container { display: flex; gap: 4px; width: 130px; }
+        .filter-tab { flex: 1; padding: 6px; border-radius: 8px; font-size: 12px; font-weight: 700; background-color: var(--input-bg); color: var(--text-muted); border: 1px solid var(--border); cursor: pointer; text-align: center; }
+        .filter-tab.active { background-color: var(--primary); color: var(--btn-text); border-color: var(--primary); }
+        
+        .route-card { display: flex; flex-direction: column; padding: 14px; border-radius: 14px; margin-bottom: 10px; border-left: 5px solid var(--primary); background: var(--card); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); position: relative; box-shadow: var(--shadow); transition: all 0.2s ease; }
+        .route-card.card-completed { border-left-color: var(--inc-text); opacity: 0.7; }
+        .route-card.card-pickup { border-left-color: var(--warning); }
+        
+        .data-badge { display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; background: var(--input-bg); color: var(--text-muted); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid var(--border); }
+        .badge-wrap-flex { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin: 4px 0; }
+
+        .card-control-button-group { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; width: 100%; margin-top: 4px; }
+        .btn-card-action-unit { font-size: 13px !important; font-weight: 800 !important; padding: 10px 0 !important; border-radius: 8px !important; width: 100% !important; text-align: center !important; height: auto !important; line-height: 1.4 !important; background-color: var(--input-bg) !important; color: var(--text) !important; border: 1px solid var(--border) !important; }
+        .btn-card-action-unit.nav-active { background-color: rgba(59, 130, 246, 0.1) !important; color: var(--primary-text) !important; border-color: rgba(59, 130, 246, 0.2) !important; }
+        .btn-card-action-unit.edit-active { background-color: rgba(100, 116, 139, 0.1) !important; color: var(--text-muted) !important; border-color: rgba(100, 116, 139, 0.2) !important; }
+        .btn-card-action-unit.pickup-active { background-color: var(--warning) !important; color: #ffffff !important; border-color: var(--warning) !important; }
+        .btn-card-action-unit.complete-active { background-color: var(--inc-text) !important; color: #ffffff !important; border-color: var(--inc-text) !important; }
+
+        .addr-info { display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); padding: 10px 12px; border-radius: 10px; font-size: 14.5px; font-weight: 700; margin-top: 6px; color: var(--text); line-height: 1.4; word-break: break-all; gap: 8px; }
+        .addr-text-sub-block { flex: 1; text-align: left; }
+        
+        .btn-white-emot { background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 6px !important; color: var(--text) !important; padding: 6px 10px !important; font-size: 13px !important; width: auto !important; height: auto !important; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; }
+        .btn-white-emot:active { background: var(--input-bg) !important; }
+
+        .road-info-clickable-box { background-color: var(--timer-bg); color: var(--text-muted); border: 1px dashed var(--border); padding: 8px 10px; border-radius: 8px; font-size: 12.5px; margin-top: 4px; cursor: pointer; font-weight: 700; text-align: center; width: 100%; word-break: break-all; }
+        
+        .addr-origin { background-color: rgba(59, 130, 246, 0.03); border-color: rgba(59, 130, 246, 0.12); }
+        .addr-dest { background-color: rgba(239, 68, 68, 0.03); border-color: rgba(239, 68, 68, 0.12); }
+
+        .toggle-btn { display: flex; align-items: center; justify-content: center; padding: 0 6px; border-radius: 10px; cursor: pointer; margin: 0; flex-shrink:0; font-weight: 800; font-size: 13px; height: 44px; border: 1px solid var(--border); background: var(--input-bg); white-space: nowrap; }
+        .toggle-btn input { width: 16px; height: 16px; margin: 0 8px 0 0; flex-shrink: 0; }
+        .toggle-exp input { accent-color: var(--danger); }
+        .toggle-exp span { color: var(--danger-text); }
+        .toggle-bundle input { accent-color: var(--primary); }
+        .toggle-bundle span { color: var(--primary-text); }
+
+        .table-wrapper { overflow-x: auto; overflow-y: auto; max-height: 40vh; border-radius: 12px; border: 1px solid var(--border); background: var(--card); }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
+        th, td { border-bottom: 1px solid var(--border); padding: 12px 10px; text-align: center; color: var(--text); }
+        th { background: var(--timer-bg); color: var(--text-muted); font-weight: 700; position: sticky; top: 0; z-index: 10; font-size: 12px; border-bottom: 1px solid var(--border); }
+
+        .text-red { color: var(--danger-text) !important; }
+        .text-green { color: var(--inc-text-color) !important; }
+        .text-blue { color: var(--primary-text) !important; }
+
+        .blink { animation: blinker 1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+        .hidden { display: none !important; }
+        .footer { text-align: center; font-size: 12px; color: var(--text-muted); margin-top: auto; padding: 24px 0 12px 0; font-weight: 600; letter-spacing: 0.5px; }
+
+        .popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; backdrop-filter: blur(4px); }
+        .popup-overlay.show { opacity: 1; pointer-events: auto; }
+        .popup-content { width: 92%; max-width: 400px; padding: 20px; border-radius: 16px; background: var(--card); border: 1px solid var(--border); color: var(--text); max-height: 85vh; overflow-y: auto; transform: scale(0.95); transition: transform 0.2s ease; box-shadow: var(--shadow); }
+        .popup-overlay.show .popup-content { transform: scale(1); }
+        .popup-title { font-size: 16px; font-weight: 800; margin-top: 0; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); text-align: center; }
+        .popup-row { margin-bottom: 14px; font-size: 14px; }
+        .popup-label { font-weight: 700; color: var(--text-muted); display: block; font-size: 12px; margin-bottom: 4px; }
+    </style>
+</head>
+<body>
+
+    <div class="panel" style="margin-bottom: 6px;">
+        <div class="header-flex" style="margin-bottom: 8px;">
+            <h2 style="margin:0; font-size: 20px; color: var(--primary-text); font-weight: 900; letter-spacing: -0.5px;">QuickCare Pro</h2>
+            <div style="display:flex; gap:6px; align-items:center;">
+                <button type="button" class="btn-icon btn-small" style="margin:0; font-size:14px; padding:6px 10px;" onclick="toggleForceThemeMode()">🌗</button>
+                <button class="btn-icon btn-small" style="margin:0; font-size: 16px; padding: 6px 10px;" onclick="document.getElementById('settingsArea').classList.toggle('hidden')">⚙️</button>
+            </div>
+        </div>
+        
+        <div class="timer-box" id="globalTimerBox">
+            <div class="timer-left-col">
+                <div class="timer-row">
+                    <div>
+                        <span id="sysDate" style="font-size:12px; color:var(--text-muted); margin-right:4px;"></span>
+                        <span id="sysTime" class="timer-time-main">00:00</span>
+                    </div>
+                    <span id="curQtr" class="timer-qtr-badge">Pre</span>
+                </div>
+                <div class="timer-row timer-sub-text">
+                    <span>QTR <span id="qtrLeft" style="color:var(--primary-text); font-weight:800;">0h 00m</span></span>
+                    <span>FIN <span id="totLeft" style="color:var(--text); font-weight:800;">0h 00m</span></span>
+                </div>
+            </div>
+        </div>
+
+        <div id="settingsArea" class="hidden" style="margin-top: 10px; padding-top: 14px; border-top: 1px dashed var(--border);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <label style="font-size: 12px; color: var(--text-muted); font-weight: 700;">Tmap App Key</label>
+                <button type="button" class="btn-danger btn-small" id="btnResetAll" style="padding: 4px 10px; font-size: 11px; font-weight: 700; margin: 0; border-radius: 6px;" onclick="resetAllDataAndStorage()">초기화</button>
+            </div>
+            <input type="password" id="tmapApiKey" placeholder="Tmap 인증 키를 입력하세요" style="margin-bottom: 6px;">
+            <div style="text-align: center; margin-top: 12px; font-size: 11px; color: var(--text-muted); font-weight: 500;">QuickCare Pro v1.2</div>
+        </div>
+    </div>
+
+    <div class="mode-swiper-container">
+        <div id="tabMode1" class="swiper-tab active" onclick="switchRoom(1)">오더</div>
+        <div id="tabMode2" class="swiper-tab" onclick="switchRoom(2)">정산</div>
+        <div id="tabMode3" class="swiper-tab" onclick="switchRoom(3)">지출</div>
+        <div id="tabMode4" class="swiper-tab" onclick="switchRoom(4)">정비</div>
+        <div id="tabMode5" class="swiper-tab" onclick="switchRoom(5)">통계</div>
+    </div>
+
+    <div id="roomSection1">
+        <div class="panel" style="padding: 12px 16px;">
+            <button type="button" class="clickable-title-btn" onclick="toggleOrderInputSection()">
+                <span>오더</span>
+                <span id="orderTitleArrow" class="title-arrow">▼</span>
+            </button>
+            
+            <div id="orderInputExpandContainer" class="hidden" style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border);">
+                <div class="header-flex" style="margin-bottom: 10px;">
+                    <span style="font-size: 13px; font-weight: 800; color: var(--text-muted);">오더 입력</span>
+                    
+                    <div style="display:flex; gap:4px; align-items:center;">
+                        <button id="btnPasteExcel" class="btn-warning btn-small" style="margin:0; padding: 0 12px; height:32px; font-size: 12px; white-space: nowrap;">등록</button>
+                    </div>
+                </div>
+                
+                <div id="pasteArea" class="hidden" style="margin-bottom: 10px; padding: 12px; background: var(--timer-bg); border: 1px dashed var(--warning); border-radius: 10px;">
+                    <textarea id="excelInput" rows="3" style="width: 100%; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 13px; background: var(--input-bg); color: var(--text); border: 1px solid var(--border); outline:none; font-family:inherit;" placeholder="오더 문자"></textarea>
+                    <button id="btnProcessExcel" class="btn-warning btn-small" style="width: 100%; margin:0; padding: 10px;">등록</button>
+                </div>
+
+                <div class="input-row-2-col">
+                    <select id="platformSelect">
+                        <option value="I|0.77">인성(77%)</option>
+                        <option value="L|0.77">로지(77%)</option>
+                        <option value="K|1.00">카카오(100%)</option>
+                        <option value="B|1.00">배민(100%)</option>
+                        <option value="C|1.00">쿠팡(100%)</option>
+                    </select>
+                    <select id="qtrSelect" onchange="handleQtrChangeManually(this)">
+                        <option value="AUTO">QTR 자동</option><option value="Pre">Pre</option>
+                        <option value="Q1">Q1</option><option value="Q2">Q2</option><option value="R">R</option>
+                        <option value="Q3">Q3</option><option value="Q4">Q4</option><option value="Fin">Fin</option>
+                    </select>
+                </div>
+                
+                <div class="navi-grid">
+                    <div class="navi-grid-inputs">
+                        <input type="text" id="originInput" placeholder="상차">
+                        <input type="text" id="destInput" placeholder="하차">
+                    </div>
+                    <button type="button" id="btnFetchTmap" class="btn-warning btn-tmap-fetch-action">조회</button>
+                </div>
+
+                <div class="input-row-bot">
+                    <input type="text" id="amountInput" inputmode="decimal" placeholder="운임 (단위: 천)">
+                    <input type="text" id="timeInput" inputmode="number" placeholder="시간 (분)">
+                </div>
+
+                <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px;">
+                    <label class="toggle-btn toggle-bundle" for="bundleCheck" style="flex:1;">
+                        <input type="checkbox" id="bundleCheck"><span>폰</span>
+                    </label>
+                    <label class="toggle-btn toggle-exp" for="expressCheck" style="flex:1;">
+                        <input type="checkbox" id="expressCheck"><span>EXP</span>
+                    </label>
+                </div>
+
+                <div id="tmapPreviewArea" class="hidden" style="margin-bottom: 12px; padding: 10px; background: rgba(16, 185, 129, 0.1); color: var(--inc-text-color); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-weight: 700; line-height: 1.5;"></div>
+                <button id="btnAddRoute" class="btn-primary" style="margin: 0;">추가</button>
+            </div>
+        </div>
+
+        <div class="panel" style="display: flex; flex-direction: column;">
+            <div class="header-flex" style="margin-bottom: 12px;">
+                <h3 style="margin:0; font-size: 15px; font-weight:800;">운행</h3>
+                <div class="filter-tab-container">
+                    <div id="tabRunning" class="filter-tab active" onclick="switchFilterView(false)">운행</div>
+                    <div id="tabCompleted" class="filter-tab" onclick="switchFilterView(true)">완료</div>
+                </div>
+            </div>
+            <div id="routeListContainer" style="overflow-y: auto; max-height: 520px;"></div>
+        </div>
+    </div>
+
+    <div id="roomSection2" class="hidden">
+        <div class="panel">
+            <div class="header-flex" style="margin-bottom: 12px;">
+                <h3 style="margin: 0; font-size:16px; font-weight:800; color:var(--text);">정산</h3>
+                <div style="display:flex; gap:6px; align-items: center;">
+                    <button type="button" class="btn-small btn-warning" style="height: 32px; padding: 6px 10px;" onclick="showPlatformStats()">플랫폼별</button>
+                    <button type="button" class="btn-small btn-success" style="height: 32px; padding: 6px 10px;" onclick="triggerUnifiedClipboardCopy()">엑셀복사</button>
+                </div>
+            </div>
+
+            <div class="calc-banner-grid">
+                <div class="calc-banner-card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);"><span class="calc-lbl">총 수입 (REV)</span><span id="totInc" class="calc-val-main">0.0k</span></div>
+                <div class="calc-banner-card sub"><span class="calc-lbl">완료 건수 (CALL)</span><span id="totCountBadge" class="calc-val-sub">0 k</span></div>
+            </div>
+            <div class="calc-banner-grid">
+                <div class="calc-banner-card sub"><span class="calc-lbl">시간당 수익 (WAGE)</span><span id="hourlyWageVal" class="calc-val-sub">0.0k</span></div>
+                <div class="calc-banner-card sub"><span class="calc-lbl">운행 거리 (DIST)</span><span id="totalDistanceVal" class="calc-val-sub">0.0 k</span></div>
+            </div>
+
+            <div class="summary-box"><div class="summary-title">지역 요약 (LOC)</div><div id="topRegionsLog" style="color:var(--text); font-weight:600;">-</div></div>
+            <div class="summary-box"><div class="summary-title">주요 도로 (ROAD)</div><div id="mainRouteSummaryLog" style="color:var(--text); font-weight:600;">-</div></div>
+
+            <div class="table-wrapper">
+                <table id="logTable">
+                    <thead><tr><th>NO</th><th>상태</th><th>플랫폼</th><th>구간</th><th>수입</th><th>거리</th><th>소요</th><th>관리</th></tr></thead>
+                    <tbody id="calcTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="roomSection3" class="hidden">
+        <div class="panel">
+            <h3 style="margin:0 0 12px 0; font-size:16px; font-weight:800;">지출</h3>
+            <div style="display:grid; grid-template-columns: 100px 1fr; gap:6px; margin-bottom:6px;">
+                <select id="expTypeSelect">
+                    <option value="주유">주유</option>
+                    <option value="식사">식사</option>
+                    <option value="간식">간식</option>
+                    <option value="기타">기타</option>
+                </select>
+                <input type="text" id="expAmountInput" inputmode="decimal" placeholder="금액">
+            </div>
+            <input type="text" id="expMemoInput" placeholder="내역" style="margin-bottom:8px;">
+            <button class="btn-danger" onclick="addExpenseRecord()">지출 등록</button>
+        </div>
+        <div class="panel">
+            <h3 style="margin:0 0 12px 0; font-size:14px; font-weight:800;">지출 내역</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>날짜</th><th>유형</th><th>내역</th><th>금액</th><th>❌</th></tr></thead>
+                    <tbody id="expenseTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="roomSection4" class="hidden">
+        <div class="panel">
+            <h3 style="margin:0 0 12px 0; font-size:16px; font-weight:800;">정비</h3>
+            <div style="display:grid; grid-template-columns: 120px 1fr; gap:6px; margin-bottom:6px;">
+                <select id="maintTypeSelect">
+                    <option value="오일">오일</option>
+                    <option value="타이어">타이어</option>
+                    <option value="브레이크패드">브레이크패드</option>
+                    <option value="정기검진">정기검진</option>
+                    <option value="기타정비">기타정비</option>
+                </select>
+                <input type="text" id="maintAmountInput" inputmode="decimal" placeholder="비용">
+            </div>
+            <input type="text" id="maintMemoInput" placeholder="메모" style="margin-bottom:8px;">
+            <button class="btn-warning" onclick="addMaintRecord()">정비 등록</button>
+        </div>
+        <div class="panel">
+            <h3 style="margin:0 0 12px 0; font-size:14px; font-weight:800;">정비 내역</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>날짜</th><th>항목</th><th>내용</th><th>비용</th><th>❌</th></tr></thead>
+                    <tbody id="maintTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="roomSection5" class="hidden">
+        <div class="panel">
+            <h3 style="margin:0 0 12px 0; font-size:16px; font-weight:800;">통계</h3>
+            <div class="calc-banner-card" style="background: linear-gradient(135deg, #065f46 0%, #022c22 100%); margin-bottom:12px;">
+                <span class="calc-lbl" style="color:#34d399;">순수익 (NET)</span>
+                <span id="grandNetProfit" class="calc-val-main" style="font-size:26px; color:#34d399;">0.0k</span>
+            </div>
+            <div class="calc-banner-grid">
+                <div class="calc-banner-card sub"><span class="calc-lbl">총 매출</span><span id="grandTotalInc" class="calc-val-sub" style="color:var(--inc-text-color);">0.0k</span></div>
+                <div class="calc-banner-card sub"><span class="calc-lbl">총 지출</span><span id="grandTotalExp" class="calc-val-sub" style="color:var(--danger-text);">0.0k</span></div>
+            </div>
+        </div>
+        <div class="panel">
+            <h3 style="margin:0 0 12px 0; font-size:14px; font-weight:800;">항목별 지출 세부 요약</h3>
+            <div class="summary-box"><div class="summary-title">주유비 총액</div><div id="statFuel" style="font-weight:700; color:var(--text);">0.0k</div></div>
+            <div class="summary-box"><div class="summary-title">식비 총액</div><div id="statFood" style="font-weight:700; color:var(--text);">0.0k</div></div>
+            <div class="summary-box"><div class="summary-title">간식비 총액</div><div id="statSnack" style="font-weight:700; color:var(--text);">0.0k</div></div>
+            <div class="summary-box"><div class="summary-title">정비비 총액</div><div id="statMaint" style="font-weight:700; color:var(--text);">0.0k</div></div>
+        </div>
+    </div>
+
+    <div id="routeDetailPopup" class="popup-overlay" onclick="closeDetailPopup()">
+        <div class="popup-content" onclick="event.stopPropagation()">
+            <h4 class="popup-title" id="popDynamicTitle">오더 정보 변경</h4>
+            <div class="popup-row">
+                <span class="popup-label">상차 설정</span>
+                <input type="text" id="popOrigin" style="margin-bottom:4px;" placeholder="상차">
+            </div>
+            <div class="popup-row">
+                <span class="popup-label">하차 설정</span>
+                <input type="text" id="popDest" style="margin-bottom:4px;" placeholder="하차">
+            </div>
+            <div class="popup-row">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:4px;">
+                    <div>
+                        <span class="popup-label">운임 (k)</span>
+                        <input type="text" id="popAmount" placeholder="운임">
+                    </div>
+                    <div>
+                        <span class="popup-label">예상 시간</span>
+                        <input type="number" id="popTime" placeholder="시간">
+                    </div>
+                </div>
+            </div>
+            <div class="popup-row">
+                <div style="display:flex; gap:6px;">
+                    <label class="toggle-btn toggle-bundle" for="popBundleCheck" style="flex:1; height:40px;">
+                        <input type="checkbox" id="popBundleCheck"><span>폰</span>
+                    </label>
+                    <label class="toggle-btn toggle-exp" for="popExpressCheck" style="flex:1; height:40px;">
+                        <input type="checkbox" id="popExpressCheck"><span>EXP</span>
+                    </label>
+                </div>
+            </div>
+            <div class="popup-row" style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border);">
+                <button class="btn-warning" id="btnSavePopupEdit" style="width:100%; margin-bottom:6px; padding:12px 0;">💾 변경 내용 저장</button>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
+                    <button class="btn-danger" id="btnDeletePopupEdit" style="padding:10px 0;">이 오더 삭제</button>
+                    <button class="btn-primary" style="background-color:var(--text-muted); padding:10px 0;" onclick="closeDetailPopup()">닫기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="statsPopup" class="popup-overlay" onclick="closeStatsPopup()"><div class="popup-content" onclick="event.stopPropagation()"><h4 class="popup-title">플랫폼 수익 통계</h4><div id="statsContent"></div><button class="btn-primary" style="width:100%; margin-top:16px; padding:12px 0;" onclick="closeStatsPopup()">닫기</button></div></div>
+
+    <div id="roadPathMajorPopup" class="popup-overlay" onclick="closeRoadPathPopup()">
+        <div class="popup-content" onclick="event.stopPropagation()">
+            <h4 class="popup-title">운행 경로 상세 안내</h4>
+            <div id="roadPathPopupContent" style="font-size: 15px; font-weight:700; line-height:1.7; background: var(--timer-bg); padding:14px; border-radius:10px; border:1px solid var(--border); text-align:center; word-break:break-all;">-</div>
+            <button class="btn-primary" style="width:100%; margin-top:16px; padding:12px 0;" onclick="closeRoadPathPopup()">확인</button>
+        </div>
+    </div>
+
+    <div class="footer">© 2026 QuickCare Pro. All rights reserved.</div>
+
+    <script>
+        const daysEng = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+        const platNames = {"I": "인성", "L": "로지", "K": "카카오", "B": "배민", "C": "쿠팡"};
+        
+        let routes = [];
+        let expenses = []; 
+        let maintenance = []; 
+        let currentFilterCompleted = false; 
+        let selectedPopupRouteId = null; 
+        let expandedCardIds = [];
+        let isForceThemeActive = null; 
+
+        let sumFuel = 0, sumFood = 0, sumSnack = 0, sumEtc = 0, sumMaint = 0;
+        
+        let tempOriginLon = null, tempOriginLat = null, tempOriginRoadAddr = "";
+        let tempDestLon = null, tempDestLat = null, tempDestRoadAddr = ""; 
+        let tempMajorRoads = ""; let tempDistanceKm = 0;
+
+        routes = cleanGarbageData(localStorage.getItem('quickone_integrated_logs'));
+        try { expenses = JSON.parse(localStorage.getItem('quickone_expenses')) || []; } catch(e) { expenses = []; }
+        try { maintenance = JSON.parse(localStorage.getItem('quickone_maintenance')) || []; } catch(e) { maintenance = []; }
+
+        window.toggleOrderInputSection = function() {
+            const container = document.getElementById('orderInputExpandContainer');
+            const arrow = document.getElementById('orderTitleArrow');
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden'); arrow.innerText = "▲";
+            } else {
+                container.classList.add('hidden'); arrow.innerText = "▼";
+            }
+        };
+
+        window.toggleCardAccordionSection = function(e, id) {
+            e.stopPropagation();
+            const idx = expandedCardIds.indexOf(id);
+            if (idx > -1) { expandedCardIds.splice(idx, 1); } else { expandedCardIds.push(id); }
+            updateDashboard();
+        };
+
+        window.inlineTextClipboardCopy = function(e, rawText) {
+            e.stopPropagation();
+            if (!rawText) return;
+            let ta = document.createElement("textarea"); ta.value = rawText; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+            alert(`복사 완료: ${rawText}`);
+        };
+
+        window.openRoadPathPopupHandler = function(e, roadFullString) {
+            e.stopPropagation();
+            document.getElementById('roadPathPopupContent').innerText = roadFullString || "상세 경로 정보가 존재하지 않습니다.";
+            document.getElementById('roadPathMajorPopup').classList.add('show');
+        };
+        window.closeRoadPathPopup = function() { document.getElementById('roadPathMajorPopup').classList.remove('show'); };
+
+        window.toggleForceThemeMode = function() {
+            if (document.body.classList.contains('dark-mode-forced')) {
+                document.body.classList.remove('dark-mode-forced');
+                document.body.classList.add('light-theme-forced');
+                isForceThemeActive = "light";
+            } else {
+                document.body.classList.remove('light-theme-forced');
+                document.body.classList.add('dark-mode-forced');
+                isForceThemeActive = "dark";
+            }
+        };
+
+        function resetAllDataAndStorage() {
+            if(confirm("모든 시스템 데이터 및 API 인증 정보가 영구 파기됩니다. 진행하시겠습니까?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        function cleanGarbageData(raw) {
+            try {
+                let parsed = JSON.parse(raw); if (!Array.isArray(parsed)) return [];
+                let cleanArr = [];
+                for (let r of parsed) {
+                    if (r && typeof r === 'object' && r.id && r.origin && r.dest) {
+                        cleanArr.push({
+                            id: String(r.id), origin: String(r.origin), dest: String(r.dest), amount: parseFloat(r.amount) || 0,
+                            time: parseInt(r.time) || 0, isExpress: !!r.isExpress, isBundle: !!r.isBundle, qtr: String(r.qtr || 'Pre'),
+                            platCode: String(r.platCode || 'K|1.00'), timeLeft: parseInt(r.timeLeft) || 0, timerActive: !!r.timerActive, 
+                            isCompleted: !!r.isCompleted, pickupDone: !!r.pickupDone, countUpMins: parseInt(r.countUpMins) || 0,
+                            originLon: parseFloat(r.originLon) || null, originLat: parseFloat(r.originLat) || null, originRoadAddr: String(r.originRoadAddr || ''),
+                            destLon: parseFloat(r.destLon) || null, destLat: parseFloat(r.destLat) || null, destRoadAddr: String(r.destRoadAddr || ''),
+                            roads: String(r.roads || ''), distanceKm: parseFloat(r.distanceKm) || 0, startedAt: r.startedAt || null, 
+                            actualTimeMins: parseInt(r.actualTimeMins) || 0, pickupTimeStr: r.pickupTimeStr || null
+                        });
+                    }
+                }
+                return cleanArr;
+            } catch (e) { return []; }
+        }
+
+        const tmapInput = document.getElementById('tmapApiKey');
+        const savedKey = localStorage.getItem('quickone_tmap_key');
+        if(savedKey) tmapInput.value = savedKey;
+        tmapInput.addEventListener('input', (e) => { localStorage.setItem('quickone_tmap_key', e.target.value.trim()); });
+
+        function switchRoom(roomNum) {
+            for(let i=1; i<=5; i++) {
+                document.getElementById(`tabMode${i}`).classList.remove('active');
+                document.getElementById(`roomSection${i}`).className = "hidden";
+            }
+            document.getElementById(`tabMode${roomNum}`).classList.add('active');
+            document.getElementById(`roomSection${roomNum}`).classList.remove('hidden');
+            updateDashboard();
+        }
+
+        function switchFilterView(isComp) { currentFilterCompleted = isComp; document.getElementById('tabRunning').classList.toggle('active', !isComp); document.getElementById('tabCompleted').classList.toggle('active', isComp); updateDashboard(); }
+
+        function updateTimer() {
+            let now = new Date(); 
+            let yyyy = now.getFullYear().toString().slice(2), mm = String(now.getMonth() + 1).padStart(2, '0'), dd = String(now.getDate()).padStart(2, '0'), dayStr = daysEng[now.getDay()];
+            document.getElementById('sysDate').innerText = `${yyyy}.${mm}.${dd}(${dayStr})`;
+            let h = now.getHours(), m = now.getMinutes(); 
+            document.getElementById('sysTime').innerText = String(h).padStart(2, '0') + ":" + String(m).padStart(2, '0');
+
+            let qtr = "Pre", qEndH = 9;
+            if (h >= 0 && h < 9) { qtr = "Pre"; qEndH = 9; } else if (h >= 9 && h < 12) { qtr = "Q1"; qEndH = 12; } else if (h >= 12 && h < 15) { qtr = "Q2"; qEndH = 15; } else if (h >= 15 && h < 17) { qtr = "R"; qEndH = 17; } else if (h >= 17 && h < 20) { qtr = "Q3"; qEndH = 20; } else if (h >= 20 && h < 23) { qtr = "Q4"; qEndH = 23; } else if (h >= 23 && h < 24) { qtr = "Fin"; qEndH = 24; }
+            document.getElementById('curQtr').innerText = qtr;
+            
+            let currentTotalMins = h * 60 + m; let targetEndMins = qEndH * 60; 
+            let qtrMinLeft = targetEndMins - currentTotalMins - 1; let totMinLeft = ((24 * 60) - currentTotalMins - 1);
+            if (qtrMinLeft < 0) qtrMinLeft = 0;
+            document.getElementById('qtrLeft').innerText = Math.floor(qtrMinLeft/60) + "h " + String(qtrMinLeft%60).padStart(2,'0') + "m"; 
+            document.getElementById('totLeft').innerText = Math.floor(totMinLeft/60) + "h " + String(totMinLeft%60).padStart(2,'0') + "m";
+            return qtr;
+        }
+        
+        setInterval(() => { 
+            let needsUpdate = false; 
+            routes.forEach((r) => { 
+                if (r.timerActive && !r.isCompleted) { 
+                    if(r.pickupDone) { r.countUpMins++; } else { r.timeLeft = r.timeLeft - 60; }
+                    needsUpdate = true; 
+                } 
+            }); 
+            if(needsUpdate && !document.getElementById('roomSection1').classList.contains('hidden')) { updateDashboard(); } 
+            updateTimer(); 
+        }, 60000);
+
+        window.handleQtrChangeManually = function(selectObj) { setTimeout(() => { selectObj.value = "AUTO"; }, 100); };
+
+        window.handleNaviOrigin = function(e, name, lon, lat) {
+            e.stopPropagation();
+            if(!lon || !lat) return alert("좌표 정보가 없습니다. 조회를 먼저 해주세요.");
+            const tmapUrl = `tmap://route?goalname=${encodeURIComponent(name)}&goalx=${lon}&goaly=${lat}`;
+            location.href = tmapUrl;
+        };
+
+        function addExpenseRecord() {
+            const type = document.getElementById('expTypeSelect').value; let amtInput = parseFloat(document.getElementById('expAmountInput').value) || 0; const memo = document.getElementById('expMemoInput').value.trim() || "지출";
+            if(amtInput <= 0) return alert("금액을 입력하세요.");
+            expenses.push({ id: 'exp_' + Date.now(), date: new Date().toLocaleDateString('ko-KR').slice(5,-1), type, amount: amtInput, memo });
+            localStorage.setItem('quickone_expenses', JSON.stringify(expenses)); document.getElementById('expAmountInput').value = ''; document.getElementById('expMemoInput').value = '';
+            updateDashboard();
+        }
+        function deleteExpense(id) { if(confirm("삭제하시겠습니까?")) { expenses = expenses.filter(x => x.id !== id); localStorage.setItem('quickone_expenses', JSON.stringify(expenses)); updateDashboard(); } }
+
+        function addMaintRecord() {
+            const type = document.getElementById('maintTypeSelect').value; let amtInput = parseFloat(document.getElementById('maintAmountInput').value) || 0; const memo = document.getElementById('maintMemoInput').value.trim() || "정비";
+            if(amtInput <= 0) return alert("비용을 입력하세요.");
+            maintenance.push({ id: 'maint_' + Date.now(), date: new Date().toLocaleDateString('ko-KR').slice(5,-1), type, amount: amtInput, memo });
+            localStorage.setItem('quickone_maintenance', JSON.stringify(maintenance)); document.getElementById('maintAmountInput').value = ''; document.getElementById('maintMemoInput').value = '';
+            updateDashboard();
+        }
+        function deleteMaint(id) { if(confirm("삭제하시겠습니까?")) { maintenance = maintenance.filter(x => x.id !== id); localStorage.setItem('quickone_maintenance', JSON.stringify(maintenance)); updateDashboard(); } }
+
+        function extractDongName(fullStr) {
+            if(!fullStr) return "미정";
+            let matched = fullStr.match(/[가-힣]+(동|가|로)/); if(matched) return matched[0];
+            let parts = fullStr.split(' '); return parts[parts.length - 1];
+        }
+
+        function cleanRoadsList(features) {
+            let list = [];
+            const bannedKeywords = ['고속도로', '올림픽대로', '강변북로', '내부순환', '외곽순환', '분당수서', '동부간선', '서부간선', '신천대로', '자동차전용', 'JC', 'IC'];
+            
+            features.forEach(f => {
+                if (f.properties && f.properties.name) {
+                    let r = f.properties.name.trim();
+                    let isBanned = bannedKeywords.some(kw => r.includes(kw));
+                    
+                    if (r && !/\d/.test(r) && !isBanned && !r.includes("교차로") && !r.includes("진입") && !r.includes("램프")) {
+                        if (list.length === 0 || list[list.length - 1] !== r) {
+                            list.push(r);
+                        }
+                    }
+                }
+            });
+            return list.join(' ➔ ') || "일반도로 주행";
+        }
+
+        async function fetchPOI(keyword, key) {
+            const url = `https://apis.openapi.sk.com/tmap/pois?version=1&searchKeyword=${encodeURIComponent(keyword)}&resCoordType=WGS84GEO&reqCoordType=WGS84GEO&count=1`;
+            const r = await fetch(url, { headers: { 'appKey': key } }); if (!r.ok) throw new Error("인증 실패");
+            const d = await r.json();
+            if (d.searchPoiInfo && d.searchPoiInfo.pois && d.searchPoiInfo.pois.poi.length > 0) { 
+                const poi = d.searchPoiInfo.pois.poi[0]; let addr = (poi.newAddressList && poi.newAddressList.newAddress && poi.newAddressList.newAddress.length > 0) ? poi.newAddressList.newAddress[0].fullAddressRoad : poi.name; 
+                return { lon: poi.noorLon, lat: poi.noorLat, roadAddr: addr }; 
+            }
+            throw new Error(`결과 없음`);
+        }
+
+        async function fetchRoute(start, end, key) {
+            const url = 'https://apis.openapi.sk.com/tmap/routes?version=1&format=json';
+            const res = await fetch(url, { method: 'POST', headers: { 'appKey': key, 'Accept': 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ startX: String(start.lon), startY: String(start.lat), endX: String(end.lon), endY: String(end.lat), startName: "START", endName: "END", reqCoordType: "WGS84GEO", resCoordType: "WGS84GEO", searchOption: "2", trafficInfo: "Y" }) });
+            if (!res.ok) throw new Error("경로 실패");
+            const d = await res.json();
+            if (d.features && d.features.length > 0) { const mins = Math.ceil(d.features[0].properties.totalTime / 60); const dist = parseFloat((d.features[0].properties.totalDistance / 1000).toFixed(1)); let parsedRoads = cleanRoadsList(d.features); return { time: mins, roads: parsedRoads, distanceKm: dist }; }
+            throw new Error("경로 누락");
+        }
+
+        document.getElementById('btnFetchTmap').addEventListener('click', async () => {
+            const key = document.getElementById('tmapApiKey').value.trim(); const oD = document.getElementById('originInput').value.trim(); const dD = document.getElementById('destInput').value.trim();
+            if (!key) return alert("설정 기어 아이콘을 눌러 Tmap 인증 키를 입력하세요."); if (!oD || !dD) return alert("상하차 정보를 입력하세요.");
+            const btn = document.getElementById('btnFetchTmap'); btn.innerHTML = "⏳"; btn.disabled = true;
+            try { 
+                const start = await fetchPOI(oD, key); tempOriginLon = start.lon; tempOriginLat = start.lat; tempOriginRoadAddr = start.roadAddr; 
+                const end = await fetchPOI(dD, key); tempDestLon = end.lon; tempDestLat = end.lat; tempDestRoadAddr = end.roadAddr;
+                const data = await fetchRoute(start, end, key); 
+                document.getElementById('timeInput').value = data.time; tempMajorRoads = data.roads; tempDistanceKm = data.distanceKm; 
+                const previewArea = document.getElementById('tmapPreviewArea'); previewArea.innerHTML = `거리: ${data.distanceKm}Km | 예상: ${data.time}분`; previewArea.classList.remove('hidden');
+            } catch (e) { alert("조회 실패: " + e.message); } finally { btn.innerHTML = "조회"; btn.disabled = false; }
+        });
+
+        document.getElementById('btnAddRoute').addEventListener('click', () => {
+            const origin = document.getElementById('originInput').value.trim(); const dest = document.getElementById('destInput').value.trim(); const amount = parseFloat(document.getElementById('amountInput').value); const time = parseInt(document.getElementById('timeInput').value) || 0; const isExpress = document.getElementById('expressCheck').checked; const isBundle = document.getElementById('bundleCheck').checked; const initTimeLeft = Math.floor(time * 60);
+            if(!origin || !dest || isNaN(amount)) return alert("정보를 입력하세요.");
+            let qtrVal = document.getElementById('curQtr').innerText;
+            routes.push({ id: 'id_' + Date.now().toString(), origin: origin, dest: dest, amount: amount, time: time, isExpress: isExpress, isBundle: isBundle, qtr: qtrVal, platCode: document.getElementById('platformSelect').value, timeLeft: initTimeLeft, timerActive: false, isCompleted: false, pickupDone: false, countUpMins: 0, originLon: tempOriginLon, originLat: tempOriginLat, originRoadAddr: tempOriginRoadAddr, destLon: tempDestLon, destLat: tempDestLat, destRoadAddr: tempDestRoadAddr, roads: tempMajorRoads, distanceKm: tempDistanceKm, startedAt: null, actualTimeMins: 0, pickupTimeStr: null });
+            localStorage.setItem('quickone_integrated_logs', JSON.stringify(routes)); document.getElementById('originInput').value = ''; document.getElementById('destInput').value = ''; document.getElementById('amountInput').value = ''; document.getElementById('timeInput').value = '';
+            document.getElementById('expressCheck').checked = false; document.getElementById('bundleCheck').checked = false; tempOriginLon = null; tempOriginLat = null; tempOriginRoadAddr = ""; tempDestLon = null; tempDestLat = null; tempDestRoadAddr = ""; tempMajorRoads = ""; tempDistanceKm = 0; document.getElementById('tmapPreviewArea').classList.add('hidden');
+            updateDashboard(); toggleOrderInputSection();
+        });
+
+        window.handleCardPickupProcess = function(e, id, displayNum) {
+            e.stopPropagation();
+            let r = routes.find(x => x.id === id); if(!r) return;
+            if(!r.pickupDone && !r.isCompleted) {
+                if(confirm("상차지(픽업지)에 도착하셨습니까?\n\n확인을 누르시면 픽업 완료 처리되며 주행 타이머가 시작됩니다.")) {
+                    let now = new Date(); r.pickupTimeStr = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
+                    r.startedAt = Date.now(); r.timerActive = true; r.pickupDone = true;
+                    localStorage.setItem('quickone_integrated_logs', JSON.stringify(routes)); updateDashboard(); return;
+                }
+            }
+        };
+
+        window.completeRouteConfirm = function(e, id) { 
+            e.stopPropagation(); 
+            let r = routes.find(x => x.id === id); 
+            if(r && r.pickupDone && !r.isCompleted) { 
+                if(confirm("하차지에 도착하여 배송을 완료하셨습니까?\n\n확인을 누르시면 정산 목록으로 이동됩니다.")) {
+                    r.isCompleted = true; r.timerActive = false; r.actualTimeMins = r.pickupDone ? r.countUpMins : r.time; 
+                    localStorage.setItem('quickone_integrated_logs', JSON.stringify(routes)); updateDashboard(); 
+                }
+            } 
+        };
+
+        window.restoreRoute = function(e, id) { e.stopPropagation(); let r = routes.find(x => x.id === id); if(r) { r.isCompleted = false; r.timerActive = false; localStorage.setItem('quickone_integrated_logs', JSON.stringify(routes)); updateDashboard(); } };
+        window.removeTableRecord = function(id) { if(confirm("이 내역을 완전히 삭제하시겠습니까?")) { routes = routes.filter(r => r.id !== id); localStorage.setItem('quickone_integrated_logs', JSON.stringify(routes)); updateDashboard(); } };
+
+        window.openDetailPopup = function(id, displayNum) {
+            let r = routes.find(x => x.id === id); if(!r) return;
+            selectedPopupRouteId = id;
+            document.getElementById('popDynamicTitle').innerText = `${displayNum}번 오더 정보 관리`;
+            document.getElementById('popOrigin').value = r.origin; document.getElementById('popDest').value = r.dest; document.getElementById('popAmount').value = r.amount; document.getElementById('popTime').value = r.time; document.getElementById('popBundleCheck').checked = !!r.isBundle; document.getElementById('popExpressCheck').checked = !!r.isExpress;
+            if(r.pickupDone) { document.getElementById('popOrigin').readOnly = true; document.getElementById('popDest').readOnly = true; } else { document.getElementById('popOrigin').readOnly = false; document.getElementById('popDest').readOnly = false; }
+            document.getElementById('routeDetailPopup').classList.add('show');
+        };
+
+        window.closeDetailPopup = function() { document.getElementById('routeDetailPopup').classList.remove('show'); selectedPopupRouteId = null; };
+
+        document.getElementById('btnSavePopupEdit').addEventListener('click', () => {
+            if(!selectedPopupRouteId) return;
+            let r = routes.find(x => x.id === selectedPopupRouteId);
+            if(r) {
+                if(!r.pickupDone) { r.origin = document.getElementById('popOrigin').value.trim(); r.dest = document.getElementById('popDest').value.trim(); }
+                let amt = parseFloat(document.getElementById('popAmount').value); r.amount = isNaN(amt) ? r.amount : amt;
+                let tm = parseInt(document.getElementById('popTime').value); r.time = isNaN(tm) ? r.time : tm;
+                r.isBundle = document.getElementById('popBundleCheck').checked; r.isExpress = document.getElementById('popExpressCheck').checked;
+                localStorage.setItem('quickone_integrated_logs', JSON.stringify(routes)); closeDetailPopup(); updateDashboard();
+            }
+        });
+
+        document.getElementById('btnDeletePopupEdit').addEventListener('click', () => {
+            if(!selectedPopupRouteId) return;
+            if(confirm("정말로 이 오더 기록을 파기하시겠습니까?")) { routes = routes.filter(x => x.id !== selectedPopupRouteId); localStorage.setItem('quickone_integrated_logs', JSON.stringify(routes)); closeDetailPopup(); updateDashboard(); }
+        });
+
+        window.showPlatformStats = function() {
+            let stats = {};
+            routes.forEach(r => {
+                if(r.isCompleted) {
+                    let p = r.platCode.split('|')[0];
+                    let pName = platNames[p] || p;
+                    let net = r.amount * (parseFloat(r.platCode.split('|')[1]) || 1.0);
+                    if(!stats[pName]) stats[pName] = { count: 0, sum: 0 };
+                    stats[pName].count++;
+                    stats[pName].sum += net;
+                }
+            });
+            let html = "<table style='width:100%; border-collapse:collapse;'><thead><tr><th>플랫폼</th><th>완료</th><th>수익</th></tr></thead><tbody>";
+            for(let k in stats) {
+                html += `<tr><td><b>${k}</b></td><td>${stats[k].count}건</td><td>₩ ${stats[k].sum.toFixed(1)}k</td></tr>`;
+            }
+            html += "</tbody></table>";
+            if(Object.keys(stats).length === 0) html = "<div style='text-align:center; padding:20px; color:var(--text-muted);'>데이터가 없습니다.</div>";
+            document.getElementById('statsContent').innerHTML = html;
+            document.getElementById('statsPopup').classList.add('show');
+        };
+        window.closeStatsPopup = function() { document.getElementById('statsPopup').classList.remove('show'); };
+
+        window.triggerUnifiedClipboardCopy = function() {
+            let text = "NO\t상태\t플랫폼\t상차지\t하차지\t운임수입\t거리\t소요시간\n";
+            routes.forEach((r, idx) => {
+                let platInfo = r.platCode.split('|');
+                let netIncome = r.amount * (parseFloat(platInfo[1]) || 1.0);
+                let actualTime = r.pickupDone ? r.countUpMins : (r.actualTimeMins || r.time);
+                let stepStatus = r.isCompleted ? "완료" : (r.pickupDone ? "픽업" : "운행");
+                text += `${idx+1}\t${stepStatus}\t${platNames[platInfo[0]]||platInfo[0]}\t${r.origin}\t${r.dest}\t${netIncome.toFixed(1)}k\t${r.distanceKm}km\t${actualTime}분\n`;
+            });
+            let ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+            alert("전체 로그가 엑셀 호환 탭 규격(TSV)으로 클립보드에 복사되었습니다.");
+        };
+
+        function updateDashboard() {
+            let routeHTML = ""; let tableHTML = ""; let expHTML = ""; let maintHTML = "";
+            let totInc = 0, totDist = 0, totMins = 0, callCount = 0;
+            let qtrRegions = {}, qtrRoads = {};
+
+            sumFuel = 0; sumFood = 0; sumSnack = 0; sumEtc = 0; sumMaint = 0;
+
+            for (let i = routes.length - 1; i >= 0; i--) {
+                let r = routes[i]; let platInfo = r.platCode.split('|');
+                let netIncome = r.amount * (parseFloat(platInfo[1]) || 1.0);
+                let actualTime = r.pickupDone ? r.countUpMins : (r.actualTimeMins || r.time);
+                let oDong = extractDongName(r.origin); let dDong = extractDongName(r.dest);
+
+                if (r.isCompleted === currentFilterCompleted) {
+                    let timerTextLine = ""; let timerColorClass = "text-blue";
+                    
+                    if(r.pickupDone) {
+                        timerTextLine = `소요: ${r.countUpMins}분`;
+                        if(r.countUpMins > r.time) timerColorClass = "text-red blink"; else timerColorClass = "text-red";
+                    } else {
+                        const m = Math.floor(Math.abs(r.timeLeft) / 60).toString().padStart(2, '0'); timerTextLine = `남음: ${m}분`;
+                        if(r.timeLeft < 0) timerColorClass = "text-red"; else timerColorClass = "text-blue";
+                    }
+                    
+                    let exBadgeHtml = '';
+                    if (r.isBundle) exBadgeHtml += '<span class="data-badge" style="background-color:rgba(59,130,246,0.1); color:var(--primary-text); border-color:rgba(59,130,246,0.15);">폰</span> ';
+                    if (r.isExpress) exBadgeHtml += '<span class="data-badge" style="background-color:rgba(239,68,68,0.1); color:var(--danger-text); border-color:rgba(239,68,68,0.15);">EXP</span> ';
+                    const dBadge = '<span class="data-badge">' + (platNames[platInfo[0]] || platInfo[0]) + '</span>';
+
+                    let borderClass = r.isCompleted ? "card-completed" : (r.pickupDone ? "card-pickup" : "card-running");
+                    const isCardExpanded = expandedCardIds.includes(r.id);
+
+                    let pTimeBadge = r.pickupTimeStr ? '<span class="data-badge" style="background-color:rgba(239,68,68,0.12); color:var(--danger-text); font-weight:800;">⏱️ ' + r.pickupTimeStr + ' 픽업</span> ' : '';
+                    let rawOriginText = r.originRoadAddr || r.origin;
+                    let rawDestText = r.destRoadAddr || r.dest;
+
+                    let roadDisplayLine = "일반도로 주행";
+                    if(r.roads) {
+                        let splitRoad = r.roads.split(' ➔ ');
+                        if(splitRoad.length >= 2) { 
+                            roadDisplayLine = `${splitRoad[0]} ➔ ${splitRoad[splitRoad.length - 1]}`; 
+                        } else { 
+                            roadDisplayLine = splitRoad[0]; 
+                        }
+                    }
+
+                    const detailsBodyHtml = `
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <div class="addr-info addr-origin">
+                                <div class="addr-text-sub-block"><b style="color:var(--primary-text);">상차:</b> ${rawOriginText}</div>
+                                <button type="button" class="btn-white-emot" onclick="inlineTextClipboardCopy(event, '${rawOriginText.replace(/'/g, "\\'")}')">📋</button>
+                            </div>
+                            <div class="addr-info addr-dest">
+                                <div class="addr-text-sub-block"><b style="color:var(--danger-text);">하차:</b> ${rawDestText}</div>
+                                <button type="button" class="btn-white-emot" onclick="inlineTextClipboardCopy(event, '${rawDestText.replace(/'/g, "\\'")}')">📋</button>
+                            </div>
+                        </div>
+                    `;
+
+                    let controlButtonsHtml = `
+                        <button type="button" class="btn-card-action-unit nav-active" onclick="handleNaviOrigin(event, '${r.origin}', ${r.originLon}, ${r.originLat})">상차</button>
+                        <button type="button" class="btn-card-action-unit nav-active" onclick="handleNaviOrigin(event, '${r.dest}', ${r.destLon}, ${r.destLat})">하차</button>
+                    `;
+                    
+                    if(!r.isCompleted) {
+                        if (!r.pickupDone) {
+                            controlButtonsHtml += `<button type="button" class="btn-card-action-unit pickup-active" onclick="handleCardPickupProcess(event, '${r.id}', ${i + 1})">픽업</button>`;
+                        } else {
+                            controlButtonsHtml += `<button type="button" class="btn-card-action-unit complete-active" onclick="completeRouteConfirm(event, '${r.id}')">완료</button>`; 
+                        }
+                        controlButtonsHtml += `<button type="button" class="btn-card-action-unit edit-active" onclick="openDetailPopup('${r.id}', ${i + 1})">관리</button>`;
+                    } else {
+                        controlButtonsHtml += `<button type="button" class="btn-card-action-unit" onclick="restoreRoute(event, '${r.id}')">🔄복구</button>`;
+                        controlButtonsHtml += `<button type="button" class="btn-card-action-unit edit-active" onclick="openDetailPopup('${r.id}', ${i + 1})">관리</button>`;
+                    }
+
+                    routeHTML += `
+                        <div class="route-card ${borderClass}">
+                            <div class="card-header-action-row" onclick="toggleCardAccordionSection(event, '${r.id}')" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; flex-direction: column; flex: 1; min-width: 0; padding-right: 8px;">
+                                    <div style="font-size: 15px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text);">
+                                        <span style="color:var(--primary-text);">[${i + 1}]</span> (${r.qtr}) ${oDong} ➔ ${dDong}
+                                    </div>
+                                    <div style="font-size: 13px; font-weight: 700; color: var(--text-muted); margin-top: 6px; display: flex; gap: 8px; align-items: center;">
+                                        <span style="color:var(--inc-text-color); font-size:14px;">${netIncome.toFixed(1)}k</span>
+                                        <span style="opacity:0.3;">|</span>
+                                        <span class="${timerColorClass}">${timerTextLine}</span>
+                                        ${r.pickupDone ? '<span style="opacity:0.3;">|</span><span style="color:var(--danger-text);">픽업</span>' : ''}
+                                    </div>
+                                </div>
+                                <div class="card-toggle-indicator" style="font-size: 11px; color: var(--text-muted); font-weight: 800; flex-shrink: 0; padding: 6px 10px; background: var(--input-bg); border-radius: 8px; border: 1px solid var(--border);">
+                                    ${isCardExpanded ? "접기 ▲" : "펼치기 ▼"}
+                                </div>
+                            </div>
+
+                            <div class="${isCardExpanded ? '' : 'hidden'}" style="margin-top: 14px; border-top: 1px dashed var(--border); padding-top: 14px; display: flex; flex-direction: column; gap: 8px;">
+                                <div class="badge-wrap-flex">
+                                    ${exBadgeHtml}${dBadge}${pTimeBadge}
+                                </div>
+
+                                <div class="road-info-clickable-box" title="전체 상세 경로 확인 클릭" onclick="openRoadPathPopupHandler(event, '${(r.roads || '상세 데이터 없음').replace(/'/g, "\\'")}')">
+                                    ${roadDisplayLine} <span style="color:var(--primary-text);">(${r.distanceKm}Km)</span>
+                                </div>
+                                
+                                ${detailsBodyHtml}
+
+                                <div class="card-control-button-group" style="margin-top: 4px;">
+                                    ${controlButtonsHtml}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if(r.isCompleted) {
+                    callCount++; totInc += netIncome;
+                    if (!r.isBundle) { totDist += r.distanceKm; totMins += actualTime; }
+                    if(!qtrRegions[r.qtr]) qtrRegions[r.qtr] = []; if(!qtrRegions[r.qtr].includes(dDong)) qtrRegions[r.qtr].push(dDong);
+
+                    if (r.roads) { 
+                        let splitRoad = r.roads.split(' ➔ '); 
+                        if(splitRoad.length >= 1) {
+                            let lastRoad = splitRoad[splitRoad.length - 1]; 
+                            if (lastRoad && lastRoad !== "정보 없음" && lastRoad !== "START" && lastRoad !== "END") { 
+                                if(!qtrRoads[r.qtr]) qtrRoads[r.qtr] = []; 
+                                if(!qtrRoads[r.qtr].includes(lastRoad)) qtrRoads[r.qtr].push(lastRoad); 
+                            }
+                        }
+                    }
+                }
+
+                let stepStatus = r.isCompleted ? "완료" : (r.pickupDone ? "픽업" : "운행");
+                let tColor = r.isCompleted ? "color: var(--inc-text-color);" : (r.pickupDone ? "color: var(--danger-text);" : "color: var(--primary-text);");
+                let statusBadgeTable = `<span style="font-size:11px; font-weight:800; ${tColor}">${stepStatus}</span>`;
+                
+                tableHTML += `<tr><td>${i+1}</td><td>${statusBadgeTable}</td><td><span style="font-weight:800;">${platNames[platInfo[0]] || platInfo[0]}</span></td><td style="text-align:left;">${oDong}➔${dDong}</td><td style="font-weight:800;">${netIncome.toFixed(1)}k</td><td>${r.distanceKm}km</td><td>${actualTime}분</td><td><button class="btn-card-action-unit edit-active" style="padding:4px 8px !important; width:auto !important; font-size:11px !important; margin:0;" onclick="openDetailPopup('${r.id}', ${i+1})">관리</button></td></tr>`;
+            }
+
+            expenses.forEach(e => {
+                if(e.type === "주유") sumFuel += e.amount; 
+                else if(e.type === "식사") sumFood += e.amount; 
+                else if(e.type === "간식") sumSnack += e.amount; 
+                else if(e.type === "기타") sumEtc += e.amount;
+                
+                expHTML += `<tr><td>${e.date}</td><td><span class="data-badge">${e.type}</span></td><td style="text-align:left;">${e.memo}</td><td style="font-weight:700;">${e.amount.toFixed(1)}k</td><td><button class="btn-white-emot" style="padding:3px 6px !important;" onclick="deleteExpense('${e.id}')">❌</button></td></tr>`;
+            });
+
+            maintenance.forEach(m => {
+                sumMaint += m.amount;
+                maintHTML += `<tr><td>${m.date}</td><td><span class="data-badge">${m.type}</span></td><td style="text-align:left;">${m.memo}</td><td style="font-weight:700;">${m.amount.toFixed(1)}k</td><td><button class="btn-white-emot" style="padding:3px 6px !important;" onclick="deleteMaint('${m.id}')">❌</button></td></tr>`;
+            });
+
+            document.getElementById('routeListContainer').innerHTML = routeHTML || "<div style='text-align:center; padding:40px; color:var(--text-muted); font-size:14px; font-weight:600;'>현재 필터에 매칭되는 오더 카드가 없습니다.</div>";
+            document.getElementById('calcTableBody').innerHTML = tableHTML;
+            document.getElementById('expenseTableBody').innerHTML = expHTML;
+            document.getElementById('maintTableBody').innerHTML = maintHTML;
+
+            document.getElementById('totInc').innerText = totInc.toFixed(1) + "k";
+            document.getElementById('totCountBadge').innerText = callCount + " 건";
+            document.getElementById('totalDistanceVal').innerText = totDist.toFixed(1) + " km";
+            document.getElementById('hourlyWageVal').innerText = (totMins > 0 ? (totInc / totMins) * 60 : 0).toFixed(1) + "k";
+
+            let totalExpAll = sumFuel + sumFood + sumSnack + sumEtc + sumMaint; 
+            let netProfitAll = totInc - totalExpAll;
+            document.getElementById('grandTotalInc').innerText = totInc.toFixed(1) + "k"; 
+            document.getElementById('grandTotalExp').innerText = totalExpAll.toFixed(1) + "k";
+            
+            const profitEl = document.getElementById('grandNetProfit'); 
+            profitEl.innerText = netProfitAll.toFixed(1) + "k";
+            if(netProfitAll < 0) { profitEl.style.color = "var(--danger-text)"; } else { profitEl.style.color = "var(--inc-text-color)"; }
+
+            document.getElementById('statFuel').innerText = sumFuel.toFixed(1) + "k"; 
+            document.getElementById('statFood').innerText = sumFood.toFixed(1) + "k"; 
+            document.getElementById('statSnack').innerText = sumSnack.toFixed(1) + "k"; 
+            document.getElementById('statMaint').innerText = sumMaint.toFixed(1) + "k";
+
+            let locTextArr = []; for (let [qKey, dList] of Object.entries(qtrRegions)) { locTextArr.push(`[${qKey}] ${dList.join(', ')}`); }
+            document.getElementById('topRegionsLog').innerText = locTextArr.length ? locTextArr.join(' | ') : "-";
+            let roadTextArr = []; for (let [qKey, rList] of Object.entries(qtrRoads)) { roadTextArr.push(`[${qKey}] ${rList.join(', ')}`); }
+            document.getElementById('mainRouteSummaryLog').innerText = roadTextArr.length ? roadTextArr.join(' | ') : "-";
+        }
+
+        document.getElementById('btnPasteExcel').addEventListener('click', () => { document.getElementById('pasteArea').classList.toggle('hidden'); });
+        document.getElementById('btnProcessExcel').addEventListener('click', async () => {
+            const txt = document.getElementById('excelInput').value.trim();
+            if (!txt) return alert("텍스트가 없습니다.");
+            
+            let currentSafeQtr = updateTimer();
+            const rows = txt.split('\n'); let added = 0;
+            rows.forEach(row => {
+                const cols = row.split(/[\t,]/).map(c => c.trim()); 
+                if(cols.length >= 3) {
+                    let amt = parseFloat(cols[2].replace(/[^0-9.]/g, '')); 
+                    if(!isNaN(amt)) {
+                        if(amt >= 100) amt = amt / 1000;
+                        routes.push({ id: 'id_' + Date.now().toString() + Math.random().toString(36).substr(2, 5), origin: cols[0], dest: cols[1], amount: amt, time: 0, isExpress: false, isBundle: false, qtr: currentSafeQtr, platCode: document.getElementById('platformSelect').value, timeLeft: 0, timerActive: false, isCompleted: false, pickupDone: false, countUpMins: 0, originLon: null, originLat: null, originRoadAddr: "", destLon: null, lat: null, roads: "", destRoadAddr: "", distanceKm: 0, startedAt: null, actualTimeMins: 0, pickupTimeStr: null }); added++;
+                    }
+                }
+            });
+            if(added > 0) { localStorage.setItem('quickone_integrated_logs', JSON.stringify(routes)); updateDashboard(); document.getElementById('excelInput').value = ''; document.getElementById('pasteArea').classList.add('hidden'); alert(`성공적으로 등록되었습니다.`); toggleOrderInputSection(); }
+        });
+
+        updateTimer();
+        updateDashboard();
+    </script>
+</body>
+</html>
