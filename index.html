@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="ko" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -33,7 +33,7 @@
         .mb-8 { margin-bottom: 8px; } .mb-12 { margin-bottom: 12px; } .mb-16 { margin-bottom: 16px; } .mb-24 { margin-bottom: 24px; }
         .text-center { text-align: center; } .text-bold { font-weight: 800; }
 
-        /* [긴급복구 3] sys-bar의 z-index를 최상단(1000)으로 고정 */
+        /* sys-bar z-index 최상단 고정 (UI 겹침 원천 차단) */
         .sys-bar { position: relative; height: 52px; background: var(--m3-surface); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-size: 13px; font-weight: 800; flex-shrink: 0; z-index: 1000; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
         .sys-left { display: flex; align-items: center; gap: 8px; z-index: 2; }
         .sys-mid { position: absolute; left: 50%; transform: translateX(-50%); font-size: 18px; font-weight: 900; color: var(--m3-primary); white-space: nowrap; z-index: 1; }
@@ -44,10 +44,14 @@
         .config-trigger-btn { background: none; border: none; color: var(--m3-primary); font-size: 18px; cursor: pointer; padding: 4px; font-weight: bold; }
         .bundle-trigger-btn { background: none; border: none; color: var(--m3-muted); font-size: 12px; font-weight: 800; cursor: pointer; padding: 4px 8px; border: 1px solid var(--m3-outline-variant); border-radius: 6px; }
 
-        /* [긴급복구 3] 번들 패널 z-index:999로 설정하여 sys-bar 아래에 수납되도록 수정 */
-        #bundle-advice-panel { width: 100%; background-color: var(--m3-surface-low); border-bottom: 1px solid var(--m3-outline-variant); transform: translateY(-100%); transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); position: absolute; top: 52px; left: 0; z-index: 999; padding: 14px 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 6px; }
+        /* Geostics Radar 레이아웃이 적용된 번들 패널 */
+        #bundle-advice-panel { width: 100%; background-color: var(--m3-surface-low); border-bottom: 1px solid var(--m3-outline-variant); transform: translateY(-100%); transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); position: absolute; top: 52px; left: 0; z-index: 999; padding: 12px 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 8px; }
         #bundle-advice-panel.open { transform: translateY(0); }
-        .coherence-badge { font-size: 12px; font-weight: 800; color: var(--m3-primary); letter-spacing: 0.5px; }
+        
+        /* 캔버스 레이더 스타일 */
+        #radar-canvas { width: 100%; height: 160px; background-color: #111316; border-radius: 12px; border: 1px solid var(--m3-outline-variant); }
+        
+        .coherence-badge { font-size: 12px; font-weight: 800; color: var(--m3-primary); letter-spacing: 0.5px; display:flex; justify-content:space-between; }
         .guide-strip { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 13px; font-weight: 700; }
         .strip-item.pickup { color: var(--m3-primary); }
         .strip-item.drop { color: #2ed573; }
@@ -134,7 +138,7 @@
         <div class="sys-left">
             <div class="sys-clock" id="sysClock" onclick="openTimetableModal()">00:00</div>
             <div class="sys-qtr" id="sysQtrBadge">Q1</div>
-            <button class="bundle-trigger-btn" onclick="toggleBundlePanelState()">BUNDLE</button>
+            <button class="bundle-trigger-btn" onclick="toggleBundlePanelState()">RADAR</button>
         </div>
         <div class="sys-mid">
             <div id="sysTotalRev">0.0k</div>
@@ -145,8 +149,14 @@
     </div>
 
     <div id="bundle-advice-panel">
-        <div class="coherence-badge" id="coherence-display">COHERENCE: 0%</div>
-        <div class="guide-strip" id="guide-strip-display">
+        <div class="coherence-badge">
+            <span id="bundle-total-amt">TOTAL: 0.0k</span>
+            <span id="coherence-display" style="color:var(--m3-muted);">시청 중심 레이더</span>
+        </div>
+        
+        <canvas id="radar-canvas" width="340" height="160"></canvas>
+        
+        <div class="guide-strip" id="guide-strip-display" style="margin-top:4px;">
             <span class="strip-item pickup">STANDBY(P)</span>
             <span class="strip-arrow">&#10142;</span>
             <span class="strip-item drop">STANDBY(D)</span>
@@ -156,7 +166,7 @@
     <div class="viewport" id="main-viewport">
 
         <div id="view-ord" class="section active">
-            <div class="app-title">QuickCal Pro</div>
+            <div class="app-title" style="letter-spacing:-1px;">Geostics Base OS</div>
             
             <div class="flex-center">
                 <div class="main-toggle">
@@ -515,37 +525,145 @@
         function toggleBundlePanelState() {
             const panel = document.getElementById('bundle-advice-panel');
             panel.classList.toggle('open');
+            if(panel.classList.contains('open')) {
+                updateBundleBrain(); // 열릴 때 레이더 최신화
+            }
         }
 
-        /* [긴급복구 2] 번들 패널 자체 터치(클릭) 및 위로 스와이프 시 닫힘 로직 구현 */
+        // 패널 닫기 이벤트 (빈 공간 터치 또는 스와이프 업)
         const bPanel = document.getElementById('bundle-advice-panel');
-        bPanel.addEventListener('click', () => bPanel.classList.remove('open'));
+        bPanel.addEventListener('click', (e) => { 
+            // 캔버스를 눌렀을 때 바로 닫히지 않게 하려면 아래 조건 해제
+            if(e.target.id !== 'radar-canvas') bPanel.classList.remove('open'); 
+        });
+        
         let bStartY = 0;
         bPanel.addEventListener('touchstart', e => bStartY = e.touches[0].clientY, {passive: true});
-        bPanel.addEventListener('touchend', e => { if (bStartY - e.changedTouches[0].clientY > 30) bPanel.classList.remove('open'); }, {passive: true});
+        bPanel.addEventListener('touchend', e => { 
+            if (bStartY - e.changedTouches[0].clientY > 30) bPanel.classList.remove('open'); 
+        }, {passive: true});
 
-        /* [긴급복구 1] 번들 패널 브레인 로직 연동 - 활성화된 오더를 바탕으로 동적 텍스트/결합률 계산 */
-        function updateBundleBrain() {
-            const panel = document.getElementById('bundle-advice-panel');
-            const pickupEl = panel.querySelector('.strip-item.pickup');
-            const dropEl = panel.querySelector('.strip-item.drop');
-            const coherenceEl = document.getElementById('coherence-display');
+        /* Geostics Radar 좌표 변환 엔진 (서울 시청 중심) */
+        function getRadarCoord(name) {
+            // 대략적인 수도권 좌표 (시청 기준 상대 좌표, +x: 동쪽, -y: 북쪽 / 캔버스에선 y 반전 필요)
+            const areaMap = {
+                '강남': {x: 25, y: -25}, '서초': {x: 15, y: -25}, '송파': {x: 40, y: -20}, '잠실': {x: 35, y: -15},
+                '성수': {x: 20, y: -5}, '광진': {x: 30, y: -5}, '강동': {x: 45, y: -10}, '암사': {x: 50, y: -5},
+                '마포': {x: -15, y: 5}, '신촌': {x: -10, y: 5}, '홍대': {x: -20, y: 5}, '여의도': {x: -15, y: -10},
+                '구로': {x: -30, y: -20}, '영등포': {x: -20, y: -15}, '관악': {x: -10, y: -30}, '신림': {x: -15, y: -30},
+                '은평': {x: -15, y: 25}, '종로': {x: 5, y: 10}, '동대문': {x: 15, y: 10}, '노원': {x: 25, y: 35},
+                '하남': {x: 60, y: -15}, '구리': {x: 40, y: 15}, '인창': {x: 42, y: 15}, '남양주': {x: 60, y: 25}, '화도': {x: 80, y: 30},
+                '성남': {x: 40, y: -40}, '분당': {x: 45, y: -55}, '판교': {x: 35, y: -50}, '수원': {x: 20, y: -80},
+                '용인': {x: 50, y: -70}, '안양': {x: -10, y: -50}, '과천': {x: 5, y: -40},
+                '부천': {x: -50, y: -15}, '인천': {x: -80, y: -20}, '일산': {x: -40, y: 40}, '고양': {x: -30, y: 35},
+                '신사': {x: 15, y: -15}, '논현': {x: 20, y: -20}, '역삼': {x: 25, y: -25}
+            };
+            for(let key in areaMap) {
+                if(name.includes(key)) return areaMap[key];
+            }
+            // 매칭되지 않는 곳은 해시값으로 임의 생성 (에러 방지)
+            let hash = 0;
+            for(let i=0; i<name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            return { x: (hash % 60) - 30, y: ((hash >> 8) % 60) - 30 };
+        }
+
+        function drawGeosticsRadar(targetOrders) {
+            const cvs = document.getElementById('radar-canvas');
+            if(!cvs) return;
+            const ctx = cvs.getContext('2d');
+            const w = cvs.width, h = cvs.height;
+            const cx = w / 2, cy = h / 2; // 시청(0,0)
             
-            let activeOrders = orders.filter(o => o.state !== 'FIN');
-            if(activeOrders.length >= 2) {
-                let o1 = activeOrders[0]; let o2 = activeOrders[1];
-                pickupEl.innerText = `[${o1.platform.charAt(0)}] ${extractSummaryStr(o1.startDetail)}(P)`;
-                dropEl.innerText = `${extractSummaryStr(o2.endDetail || o2.startDetail)}(D)`;
-                coherenceEl.innerText = `COHERENCE: ${Math.floor(Math.random() * 20 + 80)}%`; 
-            } else if(activeOrders.length === 1) {
-                let o = activeOrders[0];
-                pickupEl.innerText = `[${o.platform.charAt(0)}] ${extractSummaryStr(o.startDetail)}(P)`;
-                dropEl.innerText = o.endDetail ? `${extractSummaryStr(o.endDetail)}(D)` : 'WAITING(D)';
-                coherenceEl.innerText = `COHERENCE: 50%`;
+            ctx.clearRect(0,0,w,h);
+            
+            // X, Y 중심축 그리기 (시청 기준)
+            ctx.strokeStyle = '#2c313a'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke(); // X
+            ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke(); // Y
+            
+            ctx.fillStyle = '#6c7380'; ctx.font = '11px -apple-system';
+            ctx.fillText('북', cx - 14, 14);
+            ctx.fillText('남', cx - 14, h - 8);
+            ctx.fillText('동', w - 16, cy - 8);
+            ctx.fillText('서', 6, cy - 8);
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.fillText('시청', cx + 4, cy + 12);
+            
+            const lineColors = ['#007aff', '#ff453a', '#10b981', '#f39c12']; 
+
+            targetOrders.forEach((o, i) => {
+                let pName = extractSummaryStr(o.startDetail) || o.startDetail;
+                let dName = o.endDetail ? (extractSummaryStr(o.endDetail) || o.endDetail) : '';
+                
+                let pCoord = getRadarCoord(pName);
+                let px = cx + pCoord.x; let py = cy - pCoord.y; // 캔버스는 y축이 아래로 갈수록 커지므로 반전
+                
+                let color = lineColors[i % lineColors.length];
+                ctx.strokeStyle = color; ctx.fillStyle = color;
+
+                if (dName) {
+                    let dCoord = getRadarCoord(dName);
+                    let dx = cx + dCoord.x; let dy = cy - dCoord.y;
+                    
+                    // 벡터 직선
+                    ctx.beginPath();
+                    ctx.moveTo(px, py);
+                    ctx.lineTo(dx, dy);
+                    ctx.lineWidth = 2.5;
+                    // 진행 방향(화살표 느낌)을 위해 점선 처리
+                    ctx.setLineDash([6, 4]); 
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    
+                    // Drop 마커
+                    ctx.beginPath(); ctx.arc(dx, dy, 5, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#fff'; ctx.font = 'bold 9px sans-serif'; ctx.fillText('D', dx-3, dy+3);
+                    ctx.fillStyle = color; ctx.fillText(dName, dx+8, dy+4);
+                }
+                
+                // Pick 마커
+                ctx.beginPath(); ctx.arc(px, py, 6, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 10px sans-serif'; ctx.fillText('P', px-3, py+3.5);
+                ctx.fillStyle = color; ctx.fillText(pName, px+9, py+4);
+            });
+        }
+
+        function updateBundleBrain() {
+            // isSelectMode일 때는 선택된 항목만, 아닐 때는 최상단 대기/진행 중인 콜만
+            let targetOrders = [];
+            if(isSelectMode && selectedSet.size > 0) {
+                targetOrders = orders.filter(o => selectedSet.has(String(o.id)));
             } else {
-                pickupEl.innerText = `STANDBY(P)`;
-                dropEl.innerText = `STANDBY(D)`;
-                coherenceEl.innerText = `COHERENCE: 0%`;
+                targetOrders = orders.filter(o => o.state !== 'FIN').slice(0, 3); // 최대 3개까지만 시각화
+            }
+
+            const amtEl = document.getElementById('bundle-total-amt');
+            const stripZone = document.getElementById('guide-strip-display');
+            
+            if(targetOrders.length > 0) {
+                let totalK = 0;
+                let pList = []; let dList = [];
+                
+                targetOrders.forEach(o => {
+                    totalK += calcNetFare(o.fareK, o.platform);
+                    pList.push(extractSummaryStr(o.startDetail));
+                    if(o.endDetail) dList.push(extractSummaryStr(o.endDetail));
+                });
+
+                amtEl.innerText = `총 운임 합산: ${(Math.round(totalK*10)/10).toFixed(1)}k`;
+                
+                stripZone.innerHTML = `
+                    <span class="strip-item pickup">PICK: ${pList.join(', ')}</span>
+                    <span class="strip-item drop" style="margin-left:8px;">DROP: ${dList.length > 0 ? dList.join(', ') : '대기중'}</span>
+                `;
+                
+                // 그래픽 렌더링 호출
+                setTimeout(() => drawGeosticsRadar(targetOrders), 50);
+
+            } else {
+                amtEl.innerText = `대기 중인 오더 없음`;
+                stripZone.innerHTML = ``;
+                setTimeout(() => drawGeosticsRadar([]), 50);
             }
         }
 
@@ -671,7 +789,7 @@
                 document.getElementById('in-fare').value = ''; document.getElementById('in-memo').value = '';
             } else { clearInputs(); }
 
-            updateBundleBrain(); // [복구] 오더 커밋 시 번들 패널 갱신
+            updateBundleBrain(); 
             renderMasterList(); updateSysTotal();
             switchMainTab('lst', document.getElementById('nav-lst')); showToast("SAVED");
         }
@@ -704,7 +822,6 @@
                 
                 let timeHtml = `<span style="font-size:10px; font-weight:800; color:var(--m3-muted);">${o.shift}</span>`;
                 
-                // [개편 1] 플랫폼 이름을 알파벳 첫 글자 이니셜화
                 let platInitial = o.platform.charAt(0);
                 let platHtml = `<span style="font-weight:900; font-size:14px; color:${o.mode === 'QUICKS' ? 'var(--m3-primary)' : 'var(--m3-error)'}">${platInitial}</span>`;
                 
@@ -724,7 +841,6 @@
                     }
                 } else { actHtml = `<span style="color:var(--m3-muted); font-weight:bold;">FIN</span>`; }
                 
-                // [개편 2] PICK/DONE 버튼과 EDIT 버튼 사이의 Margin 대폭 확대하여 터치 간섭(Fat-finger) 제거
                 actHtml += ` <span style="color:var(--m3-muted); cursor:pointer; font-size:10px; border:1px solid var(--m3-outline-variant); padding:4px 8px; border-radius:4px; margin-left:12px; display:inline-block;" onclick="openMng('${o.id}', event)">EDIT</span>`;
 
                 row.innerHTML = `<td>${chkHtml}</td><td>${timeHtml}</td><td>${platHtml}</td><td>${routeHtml}</td><td>${fareHtml}</td><td style="text-align:right; padding-right:8px;">${actHtml}</td>`;
@@ -792,7 +908,8 @@
             document.getElementById('btn-select-mode').style.background = isSelectMode ? 'var(--m3-primary-cont)' : 'transparent';
             document.getElementById('btn-select-mode').style.color = isSelectMode ? 'var(--m3-on-primary-cont)' : 'var(--m3-muted)';
             document.getElementById('bulk-action-bar').style.display = isSelectMode ? 'flex' : 'none';
-            document.getElementById('bulk-count').innerText = `0 SELECTED`; renderMasterList();
+            document.getElementById('bulk-count').innerText = `0 SELECTED`; 
+            updateBundleBrain(); renderMasterList();
         }
 
         function toggleSelectAll(el) {
@@ -800,6 +917,7 @@
             if (isChecked) { Array.from(document.querySelectorAll('.sheet-row')).forEach(w => selectedSet.add(w.getAttribute('data-id'))); }
             document.querySelectorAll('.lst-checkbox').forEach(cb => cb.checked = isChecked);
             document.getElementById('bulk-count').innerText = `${selectedSet.size} SELECTED`;
+            updateBundleBrain();
         }
 
         function toggleSelect(id) {
@@ -807,6 +925,7 @@
             const totalVisible = document.querySelectorAll('.sheet-row').length;
             document.getElementById('chkSelectAll').checked = (selectedSet.size > 0 && selectedSet.size === totalVisible);
             document.getElementById('bulk-count').innerText = `${selectedSet.size} SELECTED`;
+            updateBundleBrain();
         }
 
         function deleteSelected() {
@@ -821,12 +940,10 @@
         function setListFilter(f) { currentListFilter = f; document.getElementById('flt-run').classList.toggle('active', f === 'RUN'); document.getElementById('flt-fin').classList.toggle('active', f === 'FIN'); if(isSelectMode) toggleSelectMode(); renderMasterList(); }
         function setTypeFilter(t) { currentTypeFilter = t; document.getElementById('flt-all').classList.toggle('active', t === 'ALL'); document.getElementById('flt-quicks').classList.toggle('active', t === 'QUICKS'); document.getElementById('flt-eats').classList.toggle('active', t === 'EATS'); if(isSelectMode) toggleSelectMode(); renderMasterList(); }
 
-        /* [개편 3] COPY 복사 로직 전면 실무화: ASC정렬 고정, NUM/TIME 추가, 2글자 요약 주소 적용 */
         async function copyTodayData() {
             const todayOrders = orders.filter(o => o.state === 'FIN' && (currentTypeFilter === 'ALL' ? true : o.mode === currentTypeFilter));
             if(todayOrders.length === 0) { showToast("EMPTY"); return; }
             
-            // 무조건 과거 ➔ 최신(ASC) 정렬
             todayOrders.sort((a, b) => a.timestamp - b.timestamp);
             
             let text = "NUM\tTIME\tPLAT\tPICKUP\tDROPOFF\tAMOUNT\tNOTE\n";
@@ -980,7 +1097,6 @@
             let todayEXP = costs.filter(c => c.type === 'EXP'); let revK = 0; todayOrders.forEach(o => revK += calcNetFare(o.fareK, o.platform)); let expK = todayEXP.reduce((acc, c) => acc + c.amountK, 0);
             let pickMap = {}; let dropMap = {}; todayOrders.forEach(o => { let pWord = o.startDetail.split(' ')[0] || "None"; let dWord = o.endDetail ? o.endDetail.split(' ')[0] : "None"; pickMap[pWord] = (pickMap[pWord] || 0) + 1; if(o.endDetail) dropMap[dWord] = (dropMap[dWord] || 0) + 1; });
             
-            // 스프레드시트 기록 역시 실무형으로 '2글자 요약 주소'를 우선 전송
             const payload = { 
                 type: 'DAILY_SYNC', 
                 dateStr: dateStr, 
