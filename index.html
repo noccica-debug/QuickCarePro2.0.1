@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#111315" id="meta-theme-color">
-    <title>QuickCal Pro (v2.0.2)</title>
+    <title>QuickCal Pro (v2.0.3)</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         /* M3 Based Color Palette */
@@ -51,7 +51,7 @@
 
         /* Layout & Sections */
         .viewport { flex: 1; position: relative; overflow: hidden; background: var(--m3-bg); }
-        .section { position: absolute; inset: 0; padding: 12px 16px; display: none; flex-direction: column; overflow-y: auto; }
+        .section { position: absolute; inset: 0; padding: 12px 16px; display: none; flex-direction: column; overflow: hidden; }
         .section.active { display: flex; animation: fadeIn 0.2s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -77,27 +77,25 @@
         .btn-icon { height: 32px; padding: 0 12px; background: transparent; border: 1px solid var(--m3-outline-variant); border-radius: 16px; font-weight: 800; font-size: 11px; color: var(--m3-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .btn-red { background: var(--m3-error) !important; color: #fff !important; border-color: var(--m3-error) !important; }
         .btn-blue { background: var(--m3-primary) !important; color: #fff !important; border-color: var(--m3-primary) !important; }
-        .btn-tmap { background: #000; color: #fff; border: 1px solid #333; font-size: 9px; padding: 2px 6px; border-radius: 6px; margin-left: 6px; font-weight: 900; text-decoration: none; }
 
         /* Efficiency Badge */
         .eff-badge { background: var(--m3-surface-low); color: var(--m3-primary); font-size: 15px; font-weight: 900; padding: 10px 12px; border-radius: 8px; text-align: center; border: 2px dashed var(--m3-primary); margin-bottom: 12px; display: none; }
         .eff-badge .sub-txt { font-size: 11px; color: var(--m3-muted); font-weight: 700; margin-left: 6px; }
 
-        /* LST Table */
-        .list-wrapper { flex: 1; overflow-y: auto; padding-bottom: 20px; }
-        #lst-summary-bar { background: var(--m3-primary-cont); color: var(--m3-on-primary-cont); text-align: center; font-size: 12px; font-weight: 900; padding: 10px; border-radius: 10px; margin-bottom: 10px; }
+        /* LST Table (Scroll Optimizations) */
+        .list-wrapper { flex: 1; overflow-y: auto; overflow-x: hidden; padding-bottom: 20px; background: var(--m3-surface); border-radius: 12px; border: 1px solid var(--m3-outline-variant); }
+        #lst-summary-bar { flex-shrink: 0; background: var(--m3-primary-cont); color: var(--m3-on-primary-cont); text-align: center; font-size: 12px; font-weight: 900; padding: 10px; border-radius: 10px; margin-bottom: 10px; }
         
         .badge-q { border: 1px solid var(--m3-primary); color: var(--m3-primary); font-size: 9px; padding: 1px 4px; border-radius: 4px; font-weight: 900; margin-right: 4px; display: inline-block; margin-bottom: 2px; }
         .badge-e { border: 1px solid #f39c12; color: #f39c12; font-size: 9px; padding: 1px 4px; border-radius: 4px; font-weight: 900; margin-right: 4px; display: inline-block; margin-bottom: 2px; }
 
-        .sheet-table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 11px; background: var(--m3-surface); }
-        .sheet-table th { background: var(--m3-surface-low); color: var(--m3-muted); font-weight: 800; padding: 8px 4px; border: 1px solid var(--m3-outline-variant); }
-        .sheet-table td { padding: 8px 4px; border: 1px solid var(--m3-outline-variant); color: var(--m3-surf-text); text-align: center; vertical-align: middle; word-break: keep-all; }
+        .sheet-table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 11px; }
+        .sheet-table th { background: var(--m3-surface-low); color: var(--m3-muted); font-weight: 800; padding: 8px 4px; border: 1px solid var(--m3-outline-variant); position: sticky; top: 0; z-index: 2; }
+        .sheet-table td { padding: 8px 4px; border: 1px solid var(--m3-outline-variant); color: var(--m3-surf-text); text-align: center; vertical-align: middle; word-break: keep-all; position: relative; }
         .tbl-route { font-weight: 800; color: var(--m3-surf-text); }
         .tbl-time { font-size: 10px; color: var(--m3-muted); margin-top: 4px; font-weight: 700; }
         .tbl-eff { font-size: 10px; color: var(--m3-primary); margin-top: 4px; font-weight: 800; }
         .tbl-memo { font-size: 11px; font-weight: 700; color: #f39c12; margin-top: 4px; word-break: break-all; text-align: left; }
-        .detail-row td { background: var(--m3-surface-low); text-align: left; padding: 12px; font-size: 12px; }
 
         /* Fullscreen View Component */
         .fullscreen-overlay { position: fixed; inset: 0; background: var(--m3-bg); z-index: 8000; overflow-y: auto; padding: 24px 16px; display: none; flex-direction: column; }
@@ -106,7 +104,7 @@
         .fs-card { background: var(--m3-surface); border: 1px solid var(--m3-outline-variant); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
 
         /* RADAR Layout Component */
-        #view-radar { padding: 0; background: #030405; }
+        #view-radar { padding: 0; background: #030405; overflow: hidden; }
         #map { flex: 1; width: 100%; z-index: 1; background: #030405; position: relative; }
         
         .crosshair { position: absolute; inset: 0; pointer-events: none; z-index: 1000; }
@@ -132,17 +130,18 @@
         .btn-map-lock { position: absolute; bottom: 138px; right: 16px; width: 44px; height: 44px; border-radius: 22px; background: rgba(30,30,30,0.9); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-weight: 900; font-size: 16px; z-index: 2000; box-shadow: 0 4px 16px rgba(0,0,0,0.4); backdrop-filter: blur(4px); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
         .btn-map-lock.locked { background: #ba1a1a; color: #fff; border-color: #ba1a1a; }
 
-        .quick-sel-container { position: absolute; bottom: 30px; left: 16px; display: flex; gap: 8px; z-index: 2000; overflow-x: auto; max-width: calc(100% - 80px); padding: 10px 0; align-items: center; }
+        /* Added padding & align-items to prevent circle clipping */
+        .quick-sel-container { position: absolute; bottom: 30px; left: 16px; display: flex; gap: 8px; z-index: 2000; overflow-x: auto; max-width: calc(100% - 80px); padding: 12px 4px; align-items: center; }
         .q-sel-btn { width: 40px; height: 40px; border-radius: 20px; border: 2px solid; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 15px; background: rgba(0,0,0,0.8); cursor: pointer; color: #fff; transition: all 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex-shrink: 0; }
         .q-sel-btn.active { background: currentColor; color: #000; transform: scale(1.15); }
 
         /* Map Markers */
-        .marker-dot { width: 14px !important; height: 14px !important; border-radius: 50% !important; border: 2px solid #fff !important; box-shadow: 0 0 8px rgba(0,0,0,0.8) !important; }
+        .marker-dot { width: 16px !important; height: 16px !important; border-radius: 50% !important; border: 2px solid #fff !important; box-shadow: 0 0 8px rgba(0,0,0,0.8) !important; pointer-events: auto !important; }
         .marker-arrow { display: flex; justify-content: center; align-items: center; z-index: 4000 !important; }
         
-        .custom-pulse-icon { position: relative; display: flex; justify-content: center; align-items: center; width: 14px; height: 14px; }
-        .pulse-dot { width: 14px; height: 14px; background: #3498db; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 10px rgba(52,152,219,0.8); z-index: 2; position: absolute; top:0; left:0; }
-        .pulse-ring { border: 3px solid rgba(52,152,219,0.6); border-radius: 50%; height: 34px; width: 34px; position: absolute; left: -10px; top: -10px; animation: pulsate 1.5s ease-out infinite; z-index: 1; }
+        .custom-pulse-icon { position: relative; display: flex; justify-content: center; align-items: center; width: 30px; height: 30px; }
+        .pulse-dot { width: 14px; height: 14px; background: #3498db; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 10px rgba(52,152,219,0.8); z-index: 2; position: absolute; top: 8px; left: 8px; pointer-events: auto; }
+        .pulse-ring { border: 3px solid rgba(52,152,219,0.6); border-radius: 50%; height: 34px; width: 34px; position: absolute; left: -2px; top: -2px; animation: pulsate 1.5s ease-out infinite; z-index: 1; pointer-events: none; }
         @keyframes pulsate { 0% { transform: scale(0.3); opacity: 1; } 100% { transform: scale(1.2); opacity: 0; } }
 
         /* Modals & Nav */
@@ -177,7 +176,7 @@
     </div>
 
     <div class="viewport" id="main-viewport">
-        <div id="view-ord" class="section active">
+        <div id="view-ord" class="section active" style="overflow-y:auto;">
             <div class="app-title">QuickCal Pro</div>
             <div class="flex-center">
                 <div class="main-toggle">
@@ -223,7 +222,7 @@
         </div>
 
         <div id="view-lst" class="section">
-            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
+            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px; flex-shrink:0;">
                 <div class="flex-between">
                     <div class="chip-row">
                         <div class="chip active" id="flt-run" onclick="QuickCal.setListFilter('RUN')">ACTIVE</div>
@@ -242,9 +241,10 @@
 
                 <div id="lst-summary-bar">TOTAL: 0 | ACTIVE: 0 | DONE: 0</div>
             </div>
-            <div class="list-wrapper" style="background:var(--m3-surface); border-radius:12px; overflow:hidden; border:1px solid var(--m3-outline-variant);">
+            
+            <div class="list-wrapper">
                 <table class="sheet-table">
-                    <thead><tr><th style="width:10%;">NO</th><th style="width:18%;">SHIFT</th><th style="width:16%;">PLAT</th><th style="width:31%;">ROUTE</th><th style="width:13%;">FARE</th><th style="width:12%;">ACT</th></tr></thead>
+                    <thead><tr><th style="width:10%;">NO</th><th style="width:16%;">SHIFT</th><th style="width:16%;">PLAT</th><th style="width:34%;">ROUTE</th><th style="width:12%;">FARE</th><th style="width:12%;">ACT</th></tr></thead>
                     <tbody id="master-list-tbody"></tbody>
                 </table>
             </div>
@@ -285,7 +285,7 @@
 
     <div class="modal-overlay" id="popSet" onclick="if(event.target===this) toggleModal('popSet')">
         <div class="modal-body">
-            <div class="sys-header">Geostics Base OS (v 2.0.2)</div>
+            <div class="sys-header">Geostics Base OS (v 2.0.3)</div>
             <div class="flex-between mb-16"><div class="text-bold" style="font-size:14px;">SETTINGS</div></div>
             <div class="flex-between mb-16">
                 <div class="text-bold" style="font-size:12px; color:var(--m3-muted);">KEEP SCREEN ON</div>
@@ -320,7 +320,11 @@
             <input type="text" id="edit-drop" class="input-box mb-12" placeholder="DROPOFF">
             <input type="number" step="0.1" inputmode="decimal" id="edit-fare" class="input-box mb-12" placeholder="AMT">
             <input type="text" id="edit-memo" class="input-box mb-24" placeholder="NOTE">
-            <div class="flex-center"><button class="btn-core" style="width:100%; height:44px; margin:0;" onclick="QuickCal.saveEditData()">UPDATE</button></div>
+            
+            <div class="flex-between">
+                <button class="btn-core" style="flex:0.3; margin-right:8px; background:var(--m3-surface-low); color:var(--m3-primary);" onclick="QuickCal.reSearchEdit()">API</button>
+                <button class="btn-core" style="flex:0.7;" onclick="QuickCal.saveEditData()">UPDATE</button>
+            </div>
         </div>
     </div>
 
@@ -355,13 +359,25 @@
             }
         }
 
+        // Daily Sync Tracker
         setInterval(() => {
             const n = new Date();
             const h = String(n.getHours()).padStart(2,'0');
             const m = String(n.getMinutes()).padStart(2,'0');
-            const s = String(n.getSeconds()).padStart(2,'0');
             document.getElementById('sysClock').innerText = `${h}:${m}`;
-            if (h === '00' && m === '00' && s === '00') QuickCal.autoSyncAndClear();
+            
+            const todayStr = n.toISOString().split('T')[0];
+            const lastSync = localStorage.getItem('qcp_last_sync_date');
+            
+            if (!lastSync) {
+                localStorage.setItem('qcp_last_sync_date', todayStr);
+            } else if (lastSync !== todayStr) {
+                if(QuickCal.orders.length > 0) {
+                    QuickCal.autoSyncAndClear(todayStr);
+                } else {
+                    localStorage.setItem('qcp_last_sync_date', todayStr);
+                }
+            }
         }, 1000);
         function getNowTimeString() { const n = new Date(); return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; }
 
@@ -389,23 +405,13 @@
                 this.mapLocked = !this.mapLocked;
                 const btn = document.getElementById('btn-map-lock');
                 if (this.mapLocked) {
-                    this.map.dragging.disable();
-                    this.map.touchZoom.disable();
-                    this.map.doubleClickZoom.disable();
-                    this.map.scrollWheelZoom.disable();
-                    if(this.map.keyboard) this.map.keyboard.disable();
-                    btn.innerHTML = '🔒';
-                    btn.classList.add('locked');
-                    showToast("MAP LOCKED");
+                    this.map.dragging.disable(); this.map.touchZoom.disable(); this.map.doubleClickZoom.disable();
+                    this.map.scrollWheelZoom.disable(); if(this.map.keyboard) this.map.keyboard.disable();
+                    btn.innerHTML = '🔒'; btn.classList.add('locked'); showToast("MAP LOCKED");
                 } else {
-                    this.map.dragging.enable();
-                    this.map.touchZoom.enable();
-                    this.map.doubleClickZoom.enable();
-                    this.map.scrollWheelZoom.enable();
-                    if(this.map.keyboard) this.map.keyboard.enable();
-                    btn.innerHTML = '🔓';
-                    btn.classList.remove('locked');
-                    showToast("MAP UNLOCKED");
+                    this.map.dragging.enable(); this.map.touchZoom.enable(); this.map.doubleClickZoom.enable();
+                    this.map.scrollWheelZoom.enable(); if(this.map.keyboard) this.map.keyboard.enable();
+                    btn.innerHTML = '🔓'; btn.classList.remove('locked'); showToast("MAP UNLOCKED");
                 }
             },
 
@@ -472,15 +478,14 @@
             updateUserMarker: function(lat, lng) {
                 if (!this.map) return;
                 if (!this.userMarker) {
-                    const pulseIcon = L.divIcon({ className: 'custom-pulse-icon', iconSize: [14, 14], iconAnchor: [7, 7], html: `<div class="pulse-ring"></div><div class="pulse-dot"></div>` });
+                    const pulseIcon = L.divIcon({ className: 'custom-pulse-icon', iconSize: [30, 30], iconAnchor: [15, 15], html: `<div class="pulse-ring"></div><div class="pulse-dot"></div>` });
                     this.userMarker = L.marker([lat, lng], { icon: pulseIcon }).addTo(this.map);
                     this.userMarker.on('click', () => this.handleGPSClick());
                 } else {
                     this.userMarker.setLatLng([lat, lng]);
                     const gpsNode = this.clickedNodes.find(n => n.id === 'GPS');
                     if (gpsNode) {
-                        gpsNode.lat = lat;
-                        gpsNode.lng = lng;
+                        gpsNode.lat = lat; gpsNode.lng = lng;
                         this.renderChainedPath();
                     }
                 }
@@ -501,9 +506,7 @@
 
             reverseGeocode: async function(lat, lng) {
                 const apiKey = localStorage.getItem('qcp_key_tmap');
-                if(!apiKey) {
-                    this.showFallbackGPS(); return;
-                }
+                if(!apiKey) { this.showFallbackGPS(); return; }
                 try {
                     const res = await fetch(`https://apis.openapi.sk.com/tmap/geo/reversegeocoding?version=1&lat=${lat}&lon=${lng}&appKey=${apiKey}&coordType=WGS84GEO&addressType=A04`);
                     const data = await res.json();
@@ -521,12 +524,8 @@
                             document.getElementById('gps-road').innerText = cleanRoad ? `(${cleanRoad})` : '';
                             badge.style.display = 'block';
                             setTimeout(() => badge.style.display = 'none', 10000);
-                        } else {
-                            this.showFallbackGPS();
-                        }
-                    } else {
-                        this.showFallbackGPS();
-                    }
+                        } else { this.showFallbackGPS(); }
+                    } else { this.showFallbackGPS(); }
                 } catch (e) { this.showFallbackGPS(); }
             },
 
@@ -539,10 +538,8 @@
             },
 
             resetRadar: function() {
-                this.currentRoute = null;
-                this.selectedVectorId = null;
-                this.clearVectors();
-                this.resetClickedPath();
+                this.currentRoute = null; this.selectedVectorId = null;
+                this.clearVectors(); this.resetClickedPath();
                 document.getElementById('radar-hud').style.display = 'none';
                 document.getElementById('radar-hud').innerHTML = '';
                 document.getElementById('radar-quick-sel').innerHTML = '';
@@ -576,7 +573,7 @@
 
                 let hudUpdated = false;
 
-                // Sort orders by displayNo ascending (Left to Right sequence)
+                // Left to Right Sequencing sorting
                 const renderOrders = [...activeOrders].sort((a,b) => a.displayNo - b.displayNo);
 
                 // 1. Render Active Orders (RUN = Blue, PICK = Green)
@@ -608,8 +605,7 @@
                         const bearing = this.calcBearing(pLat, pLng, dLat, dLng);
                         const midLat = (pLat + dLat) / 2; const midLng = (pLng + dLng) / 2;
                         const arrowIcon = L.divIcon({ 
-                            className: 'marker-arrow', 
-                            iconSize: [32, 32], 
+                            className: 'marker-arrow', iconSize: [32, 32], 
                             html: `<div style="transform: rotate(${bearing - 90}deg); color: ${vColor}; opacity: ${opac}; font-size: 26px; display: flex; align-items: center; justify-content: center; position: relative;">
                                 ▶<span style="position: absolute; color: #fff; font-size: 11px; font-weight: 900; transform: rotate(${90 - bearing}deg); text-shadow: 1px 1px 2px #000;">${o.displayNo}</span>
                             </div>` 
@@ -617,7 +613,7 @@
                         const arrowMarker = L.marker([midLat, midLng], { icon: arrowIcon }).addTo(this.map);
                         this.routeVectors.push(arrowMarker);
 
-                        const dropDot = L.circleMarker([dLat, dLng], { radius: 6, fillColor: '#ff3b30', color: '#ffffff', weight: 2, fillOpacity: isSelected ? 1.0 : 0.7 }).addTo(this.map);
+                        const dropDot = L.circleMarker([dLat, dLng], { radius: 8, fillColor: '#ff3b30', color: '#ffffff', weight: 2, fillOpacity: isSelected ? 1.0 : 0.7, className: 'marker-dot' }).addTo(this.map);
                         dropDot.on('click', () => this.handleDropoffChaining(o));
                         this.routeVectors.push(dropDot);
 
@@ -631,7 +627,7 @@
                     }
                 });
 
-                // 2. Render NEW Route (Orange) placed at the very end
+                // 2. Render NEW Route (Orange) placed at the end
                 if(this.currentRoute) {
                     const isSelected = this.selectedVectorId === 'NEW';
                     const vColor = '#f39c12';
@@ -661,8 +657,7 @@
                     const bearing = this.calcBearing(pLat, pLng, dLat, dLng);
                     const midLat = (pLat + dLat) / 2; const midLng = (pLng + dLng) / 2;
                     const arrowIcon = L.divIcon({ 
-                        className: 'marker-arrow', 
-                        iconSize: [32, 32], 
+                        className: 'marker-arrow', iconSize: [32, 32], 
                         html: `<div style="transform: rotate(${bearing - 90}deg); color: ${vColor}; opacity: ${opac}; font-size: 26px; display: flex; align-items: center; justify-content: center; position: relative;">
                             ▶<span style="position: absolute; color: #fff; font-size: 11px; font-weight: 900; transform: rotate(${90 - bearing}deg); text-shadow: 1px 1px 2px #000;">N</span>
                         </div>` 
@@ -735,7 +730,7 @@
                 const hud = document.getElementById('radar-hud');
                 hud.style.borderColor = '#ff3b30';
                 hud.style.color = '#ff3b30';
-                hud.innerHTML = `[CHAIN] ${chainLabels}<br><span style="color:#ff453a; font-size:12px; font-weight:800;">${totalDistKm.toFixed(1)}km | ${totalTimeMin}min</span>`;
+                hud.innerHTML = `[CHAIN] ${chainLabels}<br><span style="color:#ff453a; font-size:12px; font-weight:800;">${totalDistKm.toFixed(1)}km [EST] | ${totalTimeMin}min</span>`;
                 this.forceShowHUD();
             },
 
@@ -751,9 +746,7 @@
                 const active = QuickCal.orders.filter(o => o.state === 'RUN' || o.state === 'PICK');
                 const quicks = active.filter(o => o.mode === 'QUICKS' && o.startCoords && o.endCoords);
                 
-                if(quicks.length < 2) {
-                    showToast("NEED MULTI ORDERS"); return;
-                }
+                if(quicks.length < 2) { showToast("NEED MULTI ORDERS"); return; }
 
                 let lastPickOrder = quicks.find(o => o.state === 'PICK') || quicks[quicks.length - 1];
                 let anchorPt = lastPickOrder.startCoords;
@@ -780,6 +773,7 @@
                 let totalDistKm = 0;
                 let pPt = anchorPt;
                 
+                // 수학적 오류를 바로잡은 기하학적 덧셈 합산 로직 (Point-to-Point)
                 optimizedRoute.forEach(o => {
                    let meters = this.map.distance([pPt.lat, pPt.lng], [o.endCoords.lat, o.endCoords.lng]);
                    totalDistKm += meters / 1000;
@@ -793,14 +787,20 @@
                 const hud = document.getElementById('radar-hud');
                 hud.style.borderColor = '#2ecc71';
                 hud.style.color = '#2ecc71';
-                hud.innerHTML = `[BUNDLE] ${seqStr}<br><span style="color:#2ecc71; font-size:12px; font-weight:800;">NET ${totalFareK.toFixed(1)}k | ${bundleHourly}k/h (${totalDistKm.toFixed(1)}km | ${totalTimeMin}min)</span>`;
+                hud.innerHTML = `[BUNDLE] ${seqStr}<br><span style="color:#2ecc71; font-size:12px; font-weight:800;">NET ${totalFareK.toFixed(1)}k | ${bundleHourly}k/h<br>(${totalDistKm.toFixed(1)}km [EST] | ${totalTimeMin}min)</span>`;
                 this.forceShowHUD();
 
+                // 카카오내비 다중 경유지 파라미터 연동
                 if(optimizedRoute.length > 0) {
-                    let firstTarget = optimizedRoute[0];
-                    let tmapDeepLink = `tmap://route?startx=${anchorPt.lng}&starty=${anchorPt.lat}&destx=${firstTarget.endCoords.lng}&desty=${firstTarget.endCoords.lat}`;
-                    showToast(`LAUNCHING BUNDLE: ${seqStr}`);
-                    setTimeout(() => { window.location.href = tmapDeepLink; }, 1200);
+                    let dest = optimizedRoute[optimizedRoute.length - 1];
+                    let vias = optimizedRoute.slice(0, optimizedRoute.length - 1).slice(0, 3); // Max 3 Vias allowed
+                    let viaStr = '';
+                    if(vias.length > 0) {
+                        viaStr = '&vp=' + vias.map(v => `${v.endCoords.lat},${v.endCoords.lng}`).join('|');
+                    }
+                    let kakaoDeepLink = `kakaomap://route?sp=${anchorPt.lat},${anchorPt.lng}&ep=${dest.endCoords.lat},${dest.endCoords.lng}${viaStr}&by=CAR`;
+                    showToast(`LAUNCHING KAKAO NAVI: ${seqStr}`);
+                    setTimeout(() => { window.location.href = kakaoDeepLink; }, 1200);
                 }
             },
 
@@ -845,9 +845,13 @@
                 document.getElementById('tmap-key').value = localStorage.getItem('qcp_key_tmap') || '';
                 document.getElementById('sheet-url').value = localStorage.getItem('qcp_url_sync') || '';
                 
-                let theme = localStorage.getItem('qcp_theme_v201');
-                if(!theme) theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                this.applyTheme(theme);
+                // 하이브리드 테마 엔진 구성 (Auto / Manual)
+                let themeMode = localStorage.getItem('qcp_theme_mode') || 'auto';
+                this.applyTheme(themeMode);
+                
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+                    if(localStorage.getItem('qcp_theme_mode') === 'auto') { this.applyTheme('auto'); }
+                });
                 
                 const wlState = localStorage.getItem('qcp_wakelock') === 'ON';
                 document.getElementById('set-wakelock').checked = wlState;
@@ -894,8 +898,25 @@
                 });
             },
 
-            applyTheme: function(theme) { document.documentElement.setAttribute('data-theme', theme); document.getElementById('meta-theme-color').setAttribute('content', theme === 'dark' ? '#111315' : '#f8f9fc'); localStorage.setItem('qcp_theme_v201', theme); },
-            toggleThemeManual: function() { const t = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light'; this.applyTheme(t); toggleModal('popSet'); },
+            applyTheme: function(mode) { 
+                let actualTheme = mode;
+                if(mode === 'auto') {
+                    actualTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                }
+                document.documentElement.setAttribute('data-theme', actualTheme); 
+                document.getElementById('meta-theme-color').setAttribute('content', actualTheme === 'dark' ? '#111315' : '#f8f9fc'); 
+                localStorage.setItem('qcp_theme_mode', mode); 
+            },
+            toggleThemeManual: function() { 
+                let currentMode = localStorage.getItem('qcp_theme_mode') || 'auto';
+                let newMode = 'dark';
+                if(currentMode === 'auto') {
+                    newMode = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'light' : 'dark';
+                } else {
+                    newMode = currentMode === 'dark' ? 'light' : 'dark';
+                }
+                this.applyTheme(newMode); toggleModal('popSet'); 
+            },
             async toggleWakeLock(isSet) { if('wakeLock' in navigator) { try { if(isSet) this.wakeLockObj = await navigator.wakeLock.request('screen'); else if(this.wakeLockObj) { await this.wakeLockObj.release(); this.wakeLockObj = null; } localStorage.setItem('qcp_wakelock', isSet ? 'ON' : 'OFF'); } catch(e){} } },
             factoryReset: function() { if(confirm('FACTORY RESET?')) { localStorage.clear(); location.reload(); } },
             
@@ -1124,10 +1145,7 @@
 
                     tr.innerHTML = `
                     <td>${o.displayNo}</td>
-                    <td>
-                        <span style="font-weight:800;">${o.shift}</span>
-                        <br><button class="btn-icon" style="display:inline-block; margin-top:6px; padding:2px 4px; font-size:9px; height:20px;" onclick="QuickCal.openEditModal('${o.id}', event)">EDIT</button>
-                    </td>
+                    <td><span style="font-weight:800;">${o.shift}</span></td>
                     <td>${badgeHTML}${o.platform}</td>
                     <td style="text-align:left;">
                         <div class="tbl-route">${o.routeSummary}</div>
@@ -1135,7 +1153,10 @@
                         ${memoRender}
                     </td>
                     <td><span style="font-weight:900;">${this.calcNetFare(o.fareK, o.platform).toFixed(1)}k</span>${effStr}</td>
-                    <td>${actBtn}</td>`;
+                    <td>
+                        ${actBtn}
+                        <div style="margin-top:4px; text-align:center;"><button style="background:none; border:none; color:var(--m3-outline); font-size:9px; font-weight:800; padding:2px; cursor:pointer;" onclick="QuickCal.openEditModal('${o.id}', event)">EDIT</button></div>
+                    </td>`;
                     tbody.appendChild(tr);
                 });
             },
@@ -1198,6 +1219,33 @@
                 document.getElementById('edit-fare').value = o.fareK; document.getElementById('edit-memo').value = o.memo || '';
                 toggleModal('popEdit');
             },
+            
+            reSearchEdit: async function() {
+                const pTxt = document.getElementById('edit-pick').value.trim();
+                const dTxt = document.getElementById('edit-drop').value.trim();
+                if(!pTxt && !dTxt) return;
+                showToast("SEARCHING...");
+                
+                const apiKey = localStorage.getItem('qcp_key_tmap');
+                const getPoiData = async (keyword) => {
+                    try {
+                        const res = await fetch(`https://apis.openapi.sk.com/tmap/pois?version=1&searchKeyword=${encodeURIComponent(keyword)}&reqCoordType=WGS84GEO&resCoordType=WGS84GEO&count=1`, { headers: { 'appKey': apiKey } });
+                        const data = await res.json();
+                        if(data?.searchPoiInfo?.pois?.poi?.length > 0) {
+                            const poi = data.searchPoiInfo.pois.poi[0];
+                            return { lat: parseFloat(poi.frontLat || poi.noorLat), lng: parseFloat(poi.frontLon || poi.noorLon) };
+                        }
+                    } catch(e) {} return null;
+                };
+
+                const id = document.getElementById('edit-id').value;
+                const o = this.orders.find(x => x.id === id);
+                if(!o) return;
+
+                if(pTxt) { let pData = await getPoiData(pTxt); if(pData) { o.startCoords = {lat: pData.lat, lng: pData.lng}; } }
+                if(dTxt) { let dData = await getPoiData(dTxt); if(dData) { o.endCoords = {lat: dData.lat, lng: dData.lng}; } }
+                showToast("COORDS SYNCED");
+            },
 
             saveEditData: function() {
                 const id = document.getElementById('edit-id').value; const o = this.orders.find(x => x.id === id); if(!o) return;
@@ -1219,7 +1267,7 @@
                 navigator.clipboard.writeText(buf).then(()=>showToast("COPIED")).catch(()=>showToast("COPY ERR")); 
             },
 
-            autoSyncAndClear: async function() {
+            autoSyncAndClear: async function(newDateStr) {
                 if (this.orders.length === 0) return;
                 const url = localStorage.getItem('qcp_url_sync');
                 if (!url) { showToast("SYNC URL REQ"); return; }
@@ -1241,6 +1289,7 @@
                     const resJson = await res.json();
                     if(resJson.result === "success") {
                         this.orders = []; localStorage.setItem('qcp_orders_v201', JSON.stringify(this.orders));
+                        if(newDateStr) localStorage.setItem('qcp_last_sync_date', newDateStr);
                         this.renderMasterList(); this.updateSysTotal(); showToast("SYNC & CLEARED");
                     } else showToast("SYNC ERR: RETRY");
                 } catch (error) { showToast("SYNC FAILED"); }
