@@ -1432,6 +1432,7 @@
                 }
             },
 
+            // --- 수정된 부분: 번들 데이터를 payload에 통합 ---
             autoSyncAndClear: async function(newDateStr) {
                 if (this.orders.length === 0) return;
                 const url = localStorage.getItem('qcp_url_sync');
@@ -1439,6 +1440,7 @@
                 
                 showToast("AUTO SYNC...");
                 try {
+                    // 개별 오더 데이터 준비
                     const payloadData = this.orders.map(o => ({
                         displayNo: o.displayNo, shift: o.shift, platform: o.platform,
                         pDong: o.endDetail ? o.routeSummary.split('➔')[0] : this.extractDong(o.startDetail),
@@ -1446,15 +1448,25 @@
                         netFare: Math.round(this.calcNetFare(o.fareK, o.platform) * 1000), memo: o.memo || ""
                     }));
 
+                    // 저장된 번들 기록 읽어오기
+                    const bundleLogs = this.loadDataSafely('qcp_bundle_logs_v203', []);
+
+                    // 통합 Payload 구성
+                    const finalPayload = { 
+                        date: new Date().toISOString().split('T')[0], 
+                        data: payloadData,
+                        bundles: bundleLogs // 신규 추가됨
+                    };
+
                     const res = await fetch(url, {
                         method: 'POST', headers: { 'Content-Type': 'text/plain' },
-                        body: JSON.stringify({ date: new Date().toISOString().split('T')[0], data: payloadData })
+                        body: JSON.stringify(finalPayload)
                     });
                     
                     const resJson = await res.json();
                     if(resJson.result === "success") {
                         this.orders = []; localStorage.setItem('qcp_orders_v203', JSON.stringify(this.orders));
-                        localStorage.setItem('qcp_bundle_logs_v203', JSON.stringify([])); // Clear bundle logs too
+                        localStorage.setItem('qcp_bundle_logs_v203', JSON.stringify([])); 
                         if(newDateStr) localStorage.setItem('qcp_last_sync_date', newDateStr);
                         this.renderMasterList(); this.updateSysTotal(); showToast("SYNC & CLEARED");
                     } else showToast("SYNC ERR: RETRY");
