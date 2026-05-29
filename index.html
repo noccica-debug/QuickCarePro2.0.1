@@ -130,7 +130,10 @@
         .btn-map-lock { position: absolute; bottom: 138px; right: 16px; width: 44px; height: 44px; border-radius: 22px; background: rgba(30,30,30,0.9); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-weight: 900; font-size: 16px; z-index: 2000; box-shadow: 0 4px 16px rgba(0,0,0,0.4); backdrop-filter: blur(4px); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
         .btn-map-lock.locked { background: #ba1a1a; color: #fff; border-color: #ba1a1a; }
 
-        /* Added padding & align-items to prevent circle clipping */
+        .btn-bundle { position: absolute; bottom: 84px; left: 16px; width: 44px; height: 44px; border-radius: 22px; background: rgba(30,30,30,0.9); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-weight: 900; font-size: 9px; z-index: 2000; box-shadow: 0 4px 16px rgba(0,0,0,0.4); backdrop-filter: blur(4px); cursor: pointer; display: flex; align-items: center; justify-content: center; text-align: center; transition: background 0.2s; line-height: 1.1; }
+        .btn-bundle.active { background: var(--m3-error); border-color: var(--m3-error); color: #fff; } /* Stealth Active, no pulsing */
+
+        /* Quick Select Container */
         .quick-sel-container { position: absolute; bottom: 30px; left: 16px; display: flex; gap: 8px; z-index: 2000; overflow-x: auto; max-width: calc(100% - 80px); padding: 12px 4px; align-items: center; }
         .q-sel-btn { width: 40px; height: 40px; border-radius: 20px; border: 2px solid; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 15px; background: rgba(0,0,0,0.8); cursor: pointer; color: #fff; transition: all 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex-shrink: 0; }
         .q-sel-btn.active { background: currentColor; color: #000; transform: scale(1.15); }
@@ -139,8 +142,8 @@
         .marker-dot { width: 16px !important; height: 16px !important; border-radius: 50% !important; border: 2px solid #fff !important; box-shadow: 0 0 8px rgba(0,0,0,0.8) !important; pointer-events: auto !important; }
         .marker-arrow { display: flex; justify-content: center; align-items: center; z-index: 4000 !important; }
         
-        .custom-pulse-icon { position: relative; display: flex; justify-content: center; align-items: center; width: 30px; height: 30px; }
-        .pulse-dot { width: 14px; height: 14px; background: #3498db; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 10px rgba(52,152,219,0.8); z-index: 2; position: absolute; top: 8px; left: 8px; pointer-events: auto; }
+        .custom-pulse-icon { position: relative; display: flex; justify-content: center; align-items: center; width: 30px; height: 30px; z-index: 9999 !important; }
+        .pulse-dot { width: 14px; height: 14px; background: #3498db; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 10px rgba(52,152,219,0.8); z-index: 9999; position: absolute; top: 8px; left: 8px; pointer-events: auto; }
         .pulse-ring { border: 3px solid rgba(52,152,219,0.6); border-radius: 50%; height: 34px; width: 34px; position: absolute; left: -2px; top: -2px; animation: pulsate 1.5s ease-out infinite; z-index: 1; pointer-events: none; }
         @keyframes pulsate { 0% { transform: scale(0.3); opacity: 1; } 100% { transform: scale(1.2); opacity: 0; } }
 
@@ -261,7 +264,8 @@
             <div id="gps-badge" class="gps-badge">📍 <span id="gps-text"></span> <span class="gps-road" id="gps-road"></span></div>
             
             <button class="btn-map-lock" id="btn-map-lock" onclick="GeosticsOS.toggleMapLock()">🔓</button>
-            <button class="btn-multi-navi" onclick="GeosticsOS.calculateBundleRoute()">MULTI<br>NAVI</button>
+            <button class="btn-multi-navi" onclick="GeosticsOS.executeMultiNavi()">MULTI<br>NAVI</button>
+            <button class="btn-bundle" id="btn-bundle-timer" onclick="GeosticsOS.toggleBundleTimer()">B/<br>PICKUP</button>
             <button class="btn-gps" onclick="GeosticsOS.fetchManualGPS()">GPS</button>
             <div id="radar-quick-sel" class="quick-sel-container"></div>
             
@@ -330,8 +334,21 @@
 
     <div class="modal-overlay" id="popTimeTable" onclick="if(event.target===this) toggleModal('popTimeTable')">
         <div class="modal-body" onclick="QuickCal.toggleTimeTableStats()">
-            <div class="flex-between mb-16"><div class="text-bold" style="font-size:14px;">TIMETABLE</div></div>
+            <div class="flex-between mb-16"><div class="text-bold" style="font-size:14px;">TIMETABLE & BUNDLE LOG</div></div>
             <div id="timetable-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="popBundle" onclick="if(event.target===this) toggleModal('popBundle')">
+        <div class="modal-body">
+            <div class="flex-between mb-16">
+                <div class="text-bold" style="font-size:14px;">BUNDLE LOG CLEAR</div>
+                <button class="btn-icon btn-red" style="width:30px; border-radius:15px; padding:0;" onclick="toggleModal('popBundle')">X</button>
+            </div>
+            <div style="font-size:12px; margin-bottom:12px; color:var(--m3-primary); font-weight:800;">ELAPSED: <span id="bdl-elapsed" data-val="0" style="color:var(--m3-surf-text); font-size:16px;">0</span> min</div>
+            <div style="font-size:12px; margin-bottom:8px; color:var(--m3-muted); font-weight:700;">SELECT ORDERS IN BUNDLE:</div>
+            <div id="bdl-order-list" style="max-height:180px; overflow-y:auto; margin-bottom:16px; background:var(--m3-surface-low); padding:12px; border-radius:12px; border:1px solid var(--m3-outline-variant);"></div>
+            <button class="btn-core" style="width:100%;" onclick="QuickCal.saveBundleLog()">SAVE & CALC</button>
         </div>
     </div>
 
@@ -398,6 +415,37 @@
 
                 if (window.ResizeObserver) {
                     new ResizeObserver(() => { if (this.map) this.map.invalidateSize(); }).observe(document.getElementById('view-radar'));
+                }
+                this.checkBundleTimerState();
+            },
+
+            checkBundleTimerState: function() {
+                const btn = document.getElementById('btn-bundle-timer');
+                if (localStorage.getItem('qcp_bundle_start_v203')) {
+                    btn.innerHTML = 'B/<br>DONE';
+                    btn.classList.add('active');
+                } else {
+                    btn.innerHTML = 'B/<br>PICKUP';
+                    btn.classList.remove('active');
+                }
+            },
+
+            toggleBundleTimer: function() {
+                const btn = document.getElementById('btn-bundle-timer');
+                let startTime = localStorage.getItem('qcp_bundle_start_v203');
+                
+                if (!startTime) {
+                    localStorage.setItem('qcp_bundle_start_v203', Date.now().toString());
+                    btn.innerHTML = 'B/<br>DONE';
+                    btn.classList.add('active');
+                    showToast("BUNDLE LOG: STARTED");
+                } else {
+                    let elapsedMs = Date.now() - parseInt(startTime);
+                    let elapsedMin = Math.max(1, Math.round(elapsedMs / 60000));
+                    localStorage.removeItem('qcp_bundle_start_v203');
+                    btn.innerHTML = 'B/<br>PICKUP';
+                    btn.classList.remove('active');
+                    QuickCal.openBundleClearModal(elapsedMin);
                 }
             },
 
@@ -480,28 +528,10 @@
                 if (!this.userMarker) {
                     const pulseIcon = L.divIcon({ className: 'custom-pulse-icon', iconSize: [30, 30], iconAnchor: [15, 15], html: `<div class="pulse-ring"></div><div class="pulse-dot"></div>` });
                     this.userMarker = L.marker([lat, lng], { icon: pulseIcon }).addTo(this.map);
-                    this.userMarker.on('click', () => this.handleGPSClick());
+                    this.userMarker.setZIndexOffset(9999); // Ensures visibility above lines
                 } else {
                     this.userMarker.setLatLng([lat, lng]);
-                    const gpsNode = this.clickedNodes.find(n => n.id === 'GPS');
-                    if (gpsNode) {
-                        gpsNode.lat = lat; gpsNode.lng = lng;
-                        this.renderChainedPath();
-                    }
                 }
-            },
-
-            handleGPSClick: function() {
-                if (!this.userMarker) return;
-                const gpsLatLng = this.userMarker.getLatLng();
-                const existingIdx = this.clickedNodes.findIndex(n => n.id === 'GPS');
-                
-                if (existingIdx !== -1) {
-                    this.clickedNodes.splice(existingIdx, 1);
-                } else {
-                    this.clickedNodes.unshift({ id: 'GPS', label: 'GPS', lat: gpsLatLng.lat, lng: gpsLatLng.lng });
-                }
-                this.renderChainedPath();
             },
 
             reverseGeocode: async function(lat, lng) {
@@ -573,10 +603,9 @@
 
                 let hudUpdated = false;
 
-                // Left to Right Sequencing sorting
                 const renderOrders = [...activeOrders].sort((a,b) => a.displayNo - b.displayNo);
 
-                // 1. Render Active Orders (RUN = Blue, PICK = Green)
+                // Render Active Orders
                 renderOrders.forEach((o) => {
                     if (o.startCoords && o.endCoords) {
                         const isSelected = this.selectedVectorId === o.id;
@@ -627,7 +656,7 @@
                     }
                 });
 
-                // 2. Render NEW Route (Orange) placed at the end
+                // Render NEW Route (Orange)
                 if(this.currentRoute) {
                     const isSelected = this.selectedVectorId === 'NEW';
                     const vColor = '#f39c12';
@@ -691,7 +720,6 @@
 
             handleDropoffChaining: function(order) {
                 if(!order.endCoords) return;
-                
                 const existingIdx = this.clickedNodes.findIndex(n => n.id === `D${order.displayNo}`);
                 
                 if (existingIdx !== -1) {
@@ -707,30 +735,30 @@
                     this.map.removeLayer(this.clickedPolyline);
                     this.clickedPolyline = null;
                 }
-                if(this.clickedNodes.length < 2) {
-                    if (this.clickedNodes.length === 0 || this.clickedNodes.length === 1) {
-                        const hud = document.getElementById('radar-hud');
-                        if (hud.innerHTML.includes("[CHAIN]")) hud.style.display = 'none';
-                    }
+                if(this.clickedNodes.length < 1) {
+                    const hud = document.getElementById('radar-hud');
+                    if (hud.innerHTML.includes("[CHAIN]")) hud.style.display = 'none';
                     return;
                 }
 
                 const latLngs = this.clickedNodes.map(pt => [pt.lat, pt.lng]);
-                this.clickedPolyline = L.polyline(latLngs, { color: '#ff3b30', weight: 4, dashArray: '6, 8', opacity: 0.9 }).addTo(this.map);
                 
-                let totalMeters = 0;
-                for(let i = 0; i < latLngs.length - 1; i++) {
-                    totalMeters += this.map.distance(latLngs[i], latLngs[i+1]);
+                if (latLngs.length > 1) {
+                    this.clickedPolyline = L.polyline(latLngs, { color: '#ff3b30', weight: 4, dashArray: '6, 8', opacity: 0.9 }).addTo(this.map);
                 }
-                let totalDistKm = totalMeters / 1000;
-                let totalTimeMin = Math.round(totalDistKm * 2.2);
-                if(totalTimeMin === 0) totalTimeMin = 1;
+                
+                // Sum NET fares of clicked nodes
+                let totalNet = 0;
+                this.clickedNodes.forEach(n => {
+                    let o = QuickCal.orders.find(x => x.displayNo == n.id.replace('D',''));
+                    if(o) totalNet += QuickCal.calcNetFare(o.fareK, o.platform);
+                });
 
                 const chainLabels = this.clickedNodes.map(pt => pt.label).join('➔');
                 const hud = document.getElementById('radar-hud');
                 hud.style.borderColor = '#ff3b30';
                 hud.style.color = '#ff3b30';
-                hud.innerHTML = `[CHAIN] ${chainLabels}<br><span style="color:#ff453a; font-size:12px; font-weight:800;">${totalDistKm.toFixed(1)}km [EST] | ${totalTimeMin}min</span>`;
+                hud.innerHTML = `[CHAIN] ${chainLabels}<br><span style="color:#ff453a; font-size:13px; font-weight:900;">NET ${totalNet.toFixed(1)}k</span>`;
                 this.forceShowHUD();
             },
 
@@ -742,66 +770,21 @@
                 }
             },
 
-            calculateBundleRoute: function() {
-                const active = QuickCal.orders.filter(o => o.state === 'RUN' || o.state === 'PICK');
-                const quicks = active.filter(o => o.mode === 'QUICKS' && o.startCoords && o.endCoords);
+            executeMultiNavi: function() {
+                if(this.clickedNodes.length === 0) { showToast("SELECT DROPOFFS"); return; }
                 
-                if(quicks.length < 2) { showToast("NEED MULTI ORDERS"); return; }
-
-                let lastPickOrder = quicks.find(o => o.state === 'PICK') || quicks[quicks.length - 1];
-                let anchorPt = lastPickOrder.startCoords;
-
-                let currentPt = anchorPt;
-                let remaining = [...quicks];
-                let optimizedRoute = [];
-
-                while(remaining.length > 0) {
-                    remaining.sort((a, b) => {
-                        let distA = this.map.distance([currentPt.lat, currentPt.lng], [a.endCoords.lat, a.endCoords.lng]);
-                        let distB = this.map.distance([currentPt.lat, currentPt.lng], [b.endCoords.lat, b.endCoords.lng]);
-                        return distA - distB;
-                    });
-                    let closest = remaining.shift();
-                    optimizedRoute.push(closest);
-                    currentPt = closest.endCoords;
+                let nodes = [...this.clickedNodes];
+                let dest = nodes.pop(); 
+                let vias = nodes.slice(0, 3); // Max 3 vias in KakaoNavi
+                
+                let url = `kakaonavi://navigate?name=${encodeURIComponent(dest.label)}&x=${dest.lng}&y=${dest.lat}`;
+                if(vias.length > 0) {
+                    let viaStr = vias.map(v => `${v.lng},${v.lat}:${encodeURIComponent(v.label)}`).join('|');
+                    url += `&via=${viaStr}`;
                 }
-
-                let seqStr = optimizedRoute.map(o => o.displayNo).join('➔');
-                let totalFareK = quicks.reduce((sum, o) => sum + QuickCal.calcNetFare(o.fareK, o.platform), 0);
                 
-                let totalTimeMin = 0;
-                let totalDistKm = 0;
-                let pPt = anchorPt;
-                
-                // 수학적 오류를 바로잡은 기하학적 덧셈 합산 로직 (Point-to-Point)
-                optimizedRoute.forEach(o => {
-                   let meters = this.map.distance([pPt.lat, pPt.lng], [o.endCoords.lat, o.endCoords.lng]);
-                   totalDistKm += meters / 1000;
-                   totalTimeMin += Math.round((meters / 1000) * 2.2);
-                   pPt = o.endCoords;
-                });
-                
-                if(totalTimeMin === 0) totalTimeMin = 1;
-                let bundleHourly = ((totalFareK / totalTimeMin) * 60).toFixed(1);
-
-                const hud = document.getElementById('radar-hud');
-                hud.style.borderColor = '#2ecc71';
-                hud.style.color = '#2ecc71';
-                hud.innerHTML = `[BUNDLE] ${seqStr}<br><span style="color:#2ecc71; font-size:12px; font-weight:800;">NET ${totalFareK.toFixed(1)}k | ${bundleHourly}k/h<br>(${totalDistKm.toFixed(1)}km [EST] | ${totalTimeMin}min)</span>`;
-                this.forceShowHUD();
-
-                // 카카오내비 다중 경유지 파라미터 연동
-                if(optimizedRoute.length > 0) {
-                    let dest = optimizedRoute[optimizedRoute.length - 1];
-                    let vias = optimizedRoute.slice(0, optimizedRoute.length - 1).slice(0, 3); // Max 3 Vias allowed
-                    let viaStr = '';
-                    if(vias.length > 0) {
-                        viaStr = '&vp=' + vias.map(v => `${v.endCoords.lat},${v.endCoords.lng}`).join('|');
-                    }
-                    let kakaoDeepLink = `kakaomap://route?sp=${anchorPt.lat},${anchorPt.lng}&ep=${dest.endCoords.lat},${dest.endCoords.lng}${viaStr}&by=CAR`;
-                    showToast(`LAUNCHING KAKAO NAVI: ${seqStr}`);
-                    setTimeout(() => { window.location.href = kakaoDeepLink; }, 1200);
-                }
+                showToast(`LAUNCHING MULTI NAVI`);
+                setTimeout(() => { window.location.href = url; }, 1000);
             },
 
             calcBearing: function(lat1, lon1, lat2, lon2) {
@@ -907,6 +890,25 @@
                         <span style="font-size:12px; font-weight:700; color:var(--m3-muted);">${sStart} ~ ${sEnd}</span>
                     </div>`;
                 });
+
+                // Render BUNDLE LOGS appended to Timetable
+                let logs = this.loadDataSafely('qcp_bundle_logs_v203', []);
+                let logHtml = `<div style="font-size:12px; text-transform:uppercase; color:var(--m3-primary); font-weight:900; margin-top:16px; margin-bottom:8px; border-bottom:1px solid var(--m3-outline-variant); padding-bottom:4px;">BUNDLE LOGS</div>`;
+                if(logs.length === 0) logHtml += `<div style="font-size:11px; color:var(--m3-outline); text-align:center;">NO BUNDLES YET</div>`;
+                logs.forEach(l => {
+                    let d = new Date(l.ts);
+                    let tStr = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                    logHtml += `
+                    <div style="background:var(--m3-surface-low); border-radius:8px; padding:10px; margin-bottom:8px; border:1px solid var(--m3-outline-variant);">
+                        <div class="flex-between" style="margin-bottom:6px;">
+                            <span style="font-weight:900; color:var(--m3-surf-text); font-size:13px;">[${l.nos}]</span>
+                            <span style="font-size:10px; color:var(--m3-muted); font-weight:700;">${tStr}</span>
+                        </div>
+                        <div style="font-size:12px; color:var(--m3-primary); font-weight:800;">NET ${l.net.toFixed(1)}k | ${l.kh}k/h <span style="color:var(--m3-muted); font-size:11px;">(${l.elapsed}min)</span></div>
+                    </div>`;
+                });
+                listEl.innerHTML += logHtml;
+
                 toggleModal('popTimeTable');
             },
 
@@ -1291,6 +1293,63 @@
                 navigator.clipboard.writeText(buf).then(()=>showToast("COPIED")).catch(()=>showToast("COPY ERR")); 
             },
 
+            openBundleClearModal: function(elapsed) {
+                document.getElementById('bdl-elapsed').innerText = elapsed;
+                document.getElementById('bdl-elapsed').dataset.val = elapsed; 
+                const listEl = document.getElementById('bdl-order-list');
+                listEl.innerHTML = '';
+                
+                let activeOrders = this.orders.filter(o => o.state === 'RUN' || o.state === 'PICK');
+                if(activeOrders.length === 0) {
+                    listEl.innerHTML = '<div style="color:var(--m3-outline); text-align:center; font-size:11px;">NO ACTIVE ORDERS</div>';
+                } else {
+                    activeOrders.forEach(o => {
+                        let net = this.calcNetFare(o.fareK, o.platform).toFixed(1);
+                        listEl.innerHTML += `
+                        <label style="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--m3-outline-variant); cursor:pointer;">
+                            <input type="checkbox" class="bdl-chk" value="${o.id}" data-no="${o.displayNo}" data-net="${net}" style="accent-color:var(--m3-primary); width:16px; height:16px;">
+                            <span style="font-size:13px; font-weight:800; color:var(--m3-surf-text);">[${o.displayNo}] ${o.routeSummary} <span style="color:var(--m3-primary)">${net}k</span></span>
+                        </label>`;
+                    });
+                }
+                toggleModal('popBundle');
+            },
+
+            saveBundleLog: function() {
+                const chks = document.querySelectorAll('.bdl-chk:checked');
+                if(chks.length === 0) { showToast("SELECT ORDERS"); return; }
+                
+                let totalNet = 0; let selectedNos = []; let selectedIds = [];
+                chks.forEach(chk => {
+                    totalNet += parseFloat(chk.dataset.net);
+                    selectedNos.push(chk.dataset.no);
+                    selectedIds.push(chk.value);
+                });
+                
+                const elapsed = parseInt(document.getElementById('bdl-elapsed').dataset.val);
+                const kh = ((totalNet / elapsed) * 60).toFixed(1);
+                
+                let logs = this.loadDataSafely('qcp_bundle_logs_v203', []);
+                logs.unshift({ ts: Date.now(), elapsed, net: totalNet, kh, nos: selectedNos.join(', ') });
+                localStorage.setItem('qcp_bundle_logs_v203', JSON.stringify(logs));
+                
+                selectedIds.forEach(id => {
+                    let o = this.orders.find(x => x.id === id);
+                    if(o) { o.state = 'DONE'; o.fTime = getNowTimeString(); }
+                });
+                
+                localStorage.setItem('qcp_orders_v203', JSON.stringify(this.orders));
+                this.renderMasterList(); this.updateSysTotal();
+                toggleModal('popBundle');
+                
+                showToast(`BUNDLE LOG: ${elapsed}m | NET ${totalNet.toFixed(1)}k | ${kh}k/h`);
+                
+                GeosticsOS.resetClickedPath();
+                if(document.getElementById('view-radar').classList.contains('active')) {
+                    GeosticsOS.drawAllVectors(this.orders.filter(o => o.state === 'RUN' || o.state === 'PICK'));
+                }
+            },
+
             autoSyncAndClear: async function(newDateStr) {
                 if (this.orders.length === 0) return;
                 const url = localStorage.getItem('qcp_url_sync');
@@ -1313,6 +1372,7 @@
                     const resJson = await res.json();
                     if(resJson.result === "success") {
                         this.orders = []; localStorage.setItem('qcp_orders_v203', JSON.stringify(this.orders));
+                        localStorage.setItem('qcp_bundle_logs_v203', JSON.stringify([])); // Clear bundle logs too
                         if(newDateStr) localStorage.setItem('qcp_last_sync_date', newDateStr);
                         this.renderMasterList(); this.updateSysTotal(); showToast("SYNC & CLEARED");
                     } else showToast("SYNC ERR: RETRY");
