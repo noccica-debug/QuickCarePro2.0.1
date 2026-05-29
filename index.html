@@ -842,6 +842,7 @@
                 this.renderNaviOrderList();
             },
 
+            // --- 네이버 지도 다중 경유 스킴 적용 ---
             launchMultiNaviWithSequence: function() {
                 if (this.naviSelectedOrders.length === 0) { showToast("SELECT ORDERS FIRST"); return; }
                 
@@ -855,12 +856,16 @@
                 if (nodes.length === 0) { showToast("NO VALID COORDINATES"); return; }
 
                 let dest = nodes.pop();
-                let vias = nodes.slice(0, 3);
+                let vias = nodes.slice(0, 5); // 네이버 지도는 최대 5개 경유지 지원
 
-                let url = `kakaonavi://navigate?name=${encodeURIComponent(dest.label)}&x=${dest.lng}&y=${dest.lat}`;
+                // 네이버 지도 URL 스킴 조립 (도착지: d, 경유지: v1~v5)
+                let url = `nmap://route/car?dlat=${dest.lat}&dlng=${dest.lng}&dname=${encodeURIComponent(dest.label)}`;
+                
                 if (vias.length > 0) {
-                    let viaStr = vias.map(v => `${v.lng},${v.lat}:${encodeURIComponent(v.label)}`).join('|');
-                    url += `&via=${viaStr}`;
+                    vias.forEach((v, idx) => {
+                        let vNum = idx + 1;
+                        url += `&v${vNum}lat=${v.lat}&v${vNum}lng=${v.lng}&v${vNum}name=${encodeURIComponent(v.label)}`;
+                    });
                 }
 
                 showToast("LAUNCHING NAVI");
@@ -1123,7 +1128,7 @@
                     GeosticsOS.storeRouteData(this.tempPick.lat, this.tempPick.lng, this.tempDrop.lat, this.tempDrop.lng, this.tempPick.srt, this.tempDrop.srt, this.tempDist, this.tempTime, this.getHourlyRate());
                     
                     if(!isSilent && document.getElementById('view-radar').classList.contains('active')) {
-                        GeosticsOS.drawAllVectors(QuickCal.orders.filter(o => o.state === 'RUN' || o.state === 'PICK'));
+                        GeosticsOS.drawAllVectors(this.orders.filter(o => o.state === 'RUN' || o.state === 'PICK'));
                     }
                     if(!isSilent) showToast("SYNCED");
                     return true;
@@ -1285,8 +1290,7 @@
                         <div style="font-size:12px; text-transform:uppercase; color:var(--m3-primary); font-weight:800; margin-bottom:8px;">Routing Path Specifics</div>
                         <div style="margin-bottom:10px; font-size:14px; font-weight:700;"><strong style="color:var(--m3-primary)">PICKUP:</strong> ${o.startDetail}</div>
                         <div style="margin-bottom:10px; font-size:14px; font-weight:700;"><strong style="color:var(--m3-error)">DROPOFF:</strong> ${o.endDetail || 'N/A'}</div>
-                        <div style="font-size:12px; text-transform:uppercase; color:var(--m3-primary); font-weight:800; margin-top:12px; margin-bottom:8px;">Navigation Apps Links</div>
-                        <div style="display:flex; gap:8px;">
+                        <div style="margin-top:12px; display:flex; gap:8px;">
                             <a href="tmap://search?name=${encodeURIComponent(o.startDetail)}" class="btn-core flex-center" style="text-decoration:none; height:36px; font-size:12px; background:#000; color:#fff;">PICK TMAP</a>
                             <a href="tmap://search?name=${encodeURIComponent(o.endDetail || o.startDetail)}" class="btn-core flex-center" style="text-decoration:none; height:36px; font-size:12px; background:#000; color:#fff;">DROP TMAP</a>
                         </div>
@@ -1432,7 +1436,6 @@
                 }
             },
 
-            // --- 수정된 부분: 번들 데이터를 payload에 통합 ---
             autoSyncAndClear: async function(newDateStr) {
                 if (this.orders.length === 0) return;
                 const url = localStorage.getItem('qcp_url_sync');
@@ -1440,7 +1443,6 @@
                 
                 showToast("AUTO SYNC...");
                 try {
-                    // 개별 오더 데이터 준비
                     const payloadData = this.orders.map(o => ({
                         displayNo: o.displayNo, shift: o.shift, platform: o.platform,
                         pDong: o.endDetail ? o.routeSummary.split('➔')[0] : this.extractDong(o.startDetail),
@@ -1448,14 +1450,12 @@
                         netFare: Math.round(this.calcNetFare(o.fareK, o.platform) * 1000), memo: o.memo || ""
                     }));
 
-                    // 저장된 번들 기록 읽어오기
                     const bundleLogs = this.loadDataSafely('qcp_bundle_logs_v203', []);
 
-                    // 통합 Payload 구성
                     const finalPayload = { 
                         date: new Date().toISOString().split('T')[0], 
                         data: payloadData,
-                        bundles: bundleLogs // 신규 추가됨
+                        bundles: bundleLogs
                     };
 
                     const res = await fetch(url, {
