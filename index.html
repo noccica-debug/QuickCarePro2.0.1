@@ -361,6 +361,7 @@
                 <div class="text-bold" style="font-size:14px; color: var(--m3-primary);">CHAIN CALCULATION</div>
                 <button class="btn-icon btn-red" style="width:30px; border-radius:15px; padding:0;" onclick="toggleModal('popChainCalc')">X</button>
             </div>
+            <div id="chain-sequence-display" style="font-size:12px; margin-bottom:12px; color:var(--m3-primary); font-weight:900; text-align:center; word-break:break-all;">SELECT ORDERS</div>
             <div style="font-size:11px; margin-bottom:8px; color:var(--m3-muted); font-weight:700;">SELECT ACTIVE ORDERS:</div>
             <div id="chain-order-list" style="max-height:180px; overflow-y:auto; margin-bottom:16px; background:var(--m3-surface-low); padding:12px; border-radius:12px; border:1px solid var(--m3-outline-variant);"></div>
             <div class="flex-between mb-8" style="padding-top:10px; border-top:1px solid var(--m3-outline-variant);">
@@ -448,7 +449,7 @@
             seoulCenter: [37.5665, 126.9780], 
             userMarker: null, selectedVectorId: null, hudVisible: true,
             chainPolyline: null, chainMarkers: [], mapLocked: false,
-            naviSelectedOrders: [],
+            naviSelectedOrders: [], chainSelectedOrders: [],
 
             init: function() {
                 if (this.map) return;
@@ -715,8 +716,11 @@
 
             // CHAIN CALC Logic
             openChainCalcModal: function() {
+                this.chainSelectedOrders = []; // Reset Array
                 const listEl = document.getElementById('chain-order-list');
                 listEl.innerHTML = '';
+                document.getElementById('chain-sequence-display').innerText = 'SELECT ORDERS';
+                
                 let activeOrders = QuickCal.orders.filter(o => o.state === 'RUN' || o.state === 'PICK');
                 if(activeOrders.length === 0) {
                     listEl.innerHTML = '<div style="color:var(--m3-outline); text-align:center; font-size:11px;">NO ACTIVE ORDERS</div>';
@@ -725,13 +729,24 @@
                         let net = QuickCal.calcNetFare(o.fareK, o.platform).toFixed(1);
                         listEl.innerHTML += `
                         <label style="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--m3-outline-variant); cursor:pointer;">
-                            <input type="checkbox" class="chain-chk" value="${o.id}" data-net="${net}" onchange="GeosticsOS.updateChainCalculation()" style="accent-color:var(--m3-primary); width:16px; height:16px;">
+                            <input type="checkbox" class="chain-chk" value="${o.id}" onchange="GeosticsOS.toggleChainOrder('${o.id}')" style="accent-color:var(--m3-primary); width:16px; height:16px;">
                             <span style="font-size:12px; font-weight:800; color:var(--m3-surf-text);">[${o.displayNo}] ${o.routeSummary} <span style="color:var(--m3-primary)">${net}k</span></span>
                         </label>`;
                     });
                 }
                 this.updateChainCalculation();
                 toggleModal('popChainCalc');
+            },
+
+            toggleChainOrder: function(id) {
+                const idx = this.chainSelectedOrders.findIndex(x => x.id === id);
+                if (idx !== -1) {
+                    this.chainSelectedOrders.splice(idx, 1);
+                } else {
+                    const o = QuickCal.orders.find(x => x.id === id);
+                    if(o) this.chainSelectedOrders.push(o);
+                }
+                this.updateChainCalculation();
             },
 
             calcCrow: function(lat1, lon1, lat2, lon2) {
@@ -742,14 +757,14 @@
             },
 
             updateChainCalculation: function() {
-                const chks = document.querySelectorAll('.chain-chk:checked');
                 let totalNet = 0; let distSum = 0;
-                let nodes = [];
+                let nodes = []; let seqNames = [];
                 
-                chks.forEach(chk => { 
-                    totalNet += parseFloat(chk.dataset.net); 
-                    let o = QuickCal.orders.find(x => x.id === chk.value);
-                    if(o && o.endCoords) nodes.push(o.endCoords);
+                this.chainSelectedOrders.forEach(o => { 
+                    totalNet += QuickCal.calcNetFare(o.fareK, o.platform); 
+                    if(o.endCoords) nodes.push(o.endCoords);
+                    let dropName = o.endDetail ? (o.routeSummary.split('➔')[1] || '') : QuickCal.extractDong(o.startDetail);
+                    if(dropName) seqNames.push(dropName.trim());
                 });
                 
                 for(let i=0; i<nodes.length-1; i++) {
@@ -758,6 +773,12 @@
 
                 document.getElementById('chain-net-display').innerText = totalNet.toFixed(1) + 'k';
                 document.getElementById('chain-dist-display').innerText = distSum.toFixed(1) + 'km';
+                
+                const seqDisplay = document.getElementById('chain-sequence-display');
+                if(seqDisplay) {
+                    seqDisplay.innerText = seqNames.length > 0 ? seqNames.join(' ➔ ') : 'SELECT ORDERS';
+                }
+
                 this.drawChainPolyline(nodes);
             },
 
@@ -851,19 +872,21 @@
 
                 if (!destOrder.endCoords || !destOrder.endCoords.fullLoc) { SystemModal.alert("INVALID COORDINATES OR ADDRESS"); return; }
 
-                let schemeUrl = `kakaonavi://route?destx=${destOrder.endCoords.lng}&desty=${destOrder.endCoords.lat}&destname=${encodeURIComponent(destOrder.endCoords.fullLoc)}`;
+                let baseParams = `route?destx=${destOrder.endCoords.lng}&desty=${destOrder.endCoords.lat}&destname=${encodeURIComponent(destOrder.endCoords.fullLoc)}`;
                 
                 if (viaOrders.length > 0) {
                     let vias = viaOrders.map(v => {
                         if(!v.endCoords || !v.endCoords.fullLoc) return "";
                         return `${encodeURIComponent(v.endCoords.fullLoc)},${v.endCoords.lng},${v.endCoords.lat}`;
                     }).filter(s => s !== "").join("|");
-                    if(vias) schemeUrl += `&vias=${vias}`;
+                    if(vias) baseParams += `&vias=${vias}`;
                 }
+
+                let intentUrl = `intent://${baseParams}#Intent;scheme=kakaonavi;package=com.locnall.KimGiSa;end;`;
 
                 showToast("LAUNCHING MULTI NAVI");
                 toggleModal('popMultiNavi');
-                setTimeout(() => { window.location.href = schemeUrl; }, 500);
+                setTimeout(() => { window.location.href = intentUrl; }, 500);
             },
 
             calcBearing: function(lat1, lon1, lat2, lon2) {
@@ -1161,6 +1184,11 @@
                 let pickLocUrl = o.startCoords && o.startCoords.fullLoc ? o.startCoords.fullLoc : o.startDetail;
                 let dropLocUrl = o.endCoords && o.endCoords.fullLoc ? o.endCoords.fullLoc : (o.endDetail || o.startDetail);
 
+                let pShort = o.startDetail.replace(/'/g, "\\'");
+                let pFull = pickLocUrl.replace(/'/g, "\\'");
+                let dShort = (o.endDetail || 'N/A').replace(/'/g, "\\'");
+                let dFull = dropLocUrl.replace(/'/g, "\\'");
+
                 content.innerHTML = `
                     <div class="fs-card fs-col-full">
                         <div class="fs-label">INFO</div>
@@ -1175,9 +1203,9 @@
                         <div class="fs-val" style="color:#10b981; font-size:16px;">NET ${netRevenueVal}k <br><span style="font-size:10px; color:var(--m3-muted);">GROSS ${o.fareK}k</span></div>
                     </div>
                     <div class="fs-card fs-col-full">
-                        <div class="fs-label">ROUTE</div>
-                        <div class="fs-val" style="margin-bottom:6px;"><strong style="color:var(--m3-primary)">PICK:</strong> ${o.startDetail}</div>
-                        <div class="fs-val"><strong style="color:var(--m3-error)">DROP:</strong> ${o.endDetail || 'N/A'}</div>
+                        <div class="fs-label">ROUTE <span style="text-transform:none;font-weight:400;color:var(--m3-outline); font-size:10px;">(TAP TO TOGGLE)</span></div>
+                        <div class="fs-val" style="margin-bottom:6px; cursor:pointer;" onclick="let p = this.querySelector('span'); p.innerText = p.innerText === '${pShort}' ? '${pFull}' : '${pShort}';"><strong style="color:var(--m3-primary)">PICK:</strong> <span>${o.startDetail}</span></div>
+                        <div class="fs-val" style="cursor:pointer;" onclick="let d = this.querySelector('span'); d.innerText = d.innerText === '${dShort}' ? '${dFull}' : '${dShort}';"><strong style="color:var(--m3-error)">DROP:</strong> <span>${o.endDetail || 'N/A'}</span></div>
                     </div>
                     <div class="fs-card fs-col-full">
                         <div class="fs-label">NAVI (TMAP)</div>
